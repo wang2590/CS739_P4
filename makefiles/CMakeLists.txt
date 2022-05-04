@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.5.1)
 
-project(BlockStore C CXX)
+project(BlockStore_PBFT C CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}" ${CMAKE_MODULE_PATH})
 include(common.cmake)
@@ -35,12 +35,12 @@ add_custom_command(
         "${cr_proto}"
       DEPENDS "${cr_proto}")
 ## replica replica proto -> rr_proto
-set(rr_proto_srcs "${CMAKE_CURRENT_BINARY_DIR}/primary_backup.pb.cc")
-set(rr_proto_hdrs "${CMAKE_CURRENT_BINARY_DIR}/primary_backup.pb.h")
-set(pb_grpc_srcs "${CMAKE_CURRENT_BINARY_DIR}/primary_backup.grpc.pb.cc")
-set(pb_grpc_hdrs "${CMAKE_CURRENT_BINARY_DIR}/primary_backup.grpc.pb.h")
+set(rr_proto_srcs "${CMAKE_CURRENT_BINARY_DIR}/replica_replica.pb.cc")
+set(rr_proto_hdrs "${CMAKE_CURRENT_BINARY_DIR}/replica_replica.pb.h")
+set(rr_grpc_srcs "${CMAKE_CURRENT_BINARY_DIR}/replica_replica.grpc.pb.cc")
+set(rr_grpc_hdrs "${CMAKE_CURRENT_BINARY_DIR}/replica_replica.grpc.pb.h")
 add_custom_command(
-      OUTPUT "${rr_proto_srcs}" "${rr_proto_hdrs}" "${pb_grpc_srcs}" "${pb_grpc_hdrs}"
+      OUTPUT "${rr_proto_srcs}" "${rr_proto_hdrs}" "${rr_grpc_srcs}" "${rr_grpc_hdrs}"
       COMMAND ${_PROTOBUF_PROTOC}
       ARGS --grpc_out "${CMAKE_CURRENT_BINARY_DIR}"
         --cpp_out "${CMAKE_CURRENT_BINARY_DIR}"
@@ -61,23 +61,13 @@ target_link_libraries(cr_grpc_proto
   ${_REFLECTION}
   ${_GRPC_GRPCPP}
   ${_PROTOBUF_LIBPROTOBUF})
-## pb_grpc_proto
-add_library(pb_grpc_proto
-  ${pb_grpc_srcs}
-  ${pb_grpc_hdrs}
+## rr_grpc_proto
+add_library(rr_grpc_proto
+  ${rr_grpc_srcs}
+  ${rr_grpc_hdrs}
   ${rr_proto_srcs}
   ${rr_proto_hdrs})
-target_link_libraries(pb_grpc_proto
-  ${_REFLECTION}
-  ${_GRPC_GRPCPP}
-  ${_PROTOBUF_LIBPROTOBUF})
-## bp_grpc_proto
-add_library(bp_grpc_proto
-  ${bp_grpc_srcs}
-  ${bp_grpc_hdrs}
-  ${bp_proto_srcs}
-  ${bp_proto_hdrs})
-target_link_libraries(bp_grpc_proto
+target_link_libraries(rr_grpc_proto
   ${_REFLECTION}
   ${_GRPC_GRPCPP}
   ${_PROTOBUF_LIBPROTOBUF})
@@ -116,93 +106,45 @@ if(BUILD_CLIENT)
     ${_PROTOBUF_LIBPROTOBUF})
 endif(BUILD_CLIENT)
 
-# ## primary build
-# if(BUILD_PRIMARY)
-#   ## generate gRPC libraries
-#   add_library(client_replica_server 
-#     ../lib_primary.cpp
-#     ../common.cpp
-#     ../client_replica_gRPC/client_replica_grpc_server.cpp)
-#   target_link_libraries(client_replica_server
-#     cr_grpc_proto
-#     ${_REFLECTION}
-#     ${_GRPC_GRPCPP}
-#     ${_PROTOBUF_LIBPROTOBUF})
-#   add_library(primary_backup_client 
-#     ../primary_backup_gRPC/primary_backup_grpc_client.h
-#     ../primary_backup_gRPC/primary_backup_grpc_client.cpp)
-#   target_link_libraries(primary_backup_client
-#     pb_grpc_proto
-#     ${_REFLECTION}
-#     ${_GRPC_GRPCPP}
-#     ${_PROTOBUF_LIBPROTOBUF})
-#   add_library(backup_primary_server 
-#     ../lib_primary.h
-#     ../lib_primary.cpp
-#     ../backup_primary_gRPC/backup_primary_grpc_server.h
-#     ../backup_primary_gRPC/backup_primary_grpc_server.cpp)
-#   target_link_libraries(backup_primary_server
-#     bp_grpc_proto
-#     ${_REFLECTION}
-#     ${_GRPC_GRPCPP}
-#     ${_PROTOBUF_LIBPROTOBUF})
-#   ## add executables
-#   set(PRIMARY ../primary.cpp ../common.h)
-#   add_executable(primary ${PRIMARY})
-#   target_link_libraries(primary
-#     client_replica_server
-#     primary_backup_client
-#     backup_primary_server
-#     bp_grpc_proto
-#     pb_grpc_proto
-#     cr_grpc_proto
-#     ${_REFLECTION}
-#     ${_GRPC_GRPCPP}
-#     ${_PROTOBUF_LIBPROTOBUF})
-# endif(BUILD_PRIMARY)
-
-# ## backup build
-# if(BUILD_BACKUP)
-#   ## generate gRPC libraries
-#   add_library(client_backup_server 
-#     ../lib_primary.cpp
-#     ../common.cpp
-#     ../client_replica_gRPC/client_backup_grpc_server.cpp)
-#   target_link_libraries(client_backup_server
-#     cr_grpc_proto
-#     primary_backup_client
-#     ${_REFLECTION}
-#     ${_GRPC_GRPCPP}
-#     ${_PROTOBUF_LIBPROTOBUF})
-#   add_library(primary_backup_server 
-#     ../lib_primary.h
-#     ../lib_primary.cpp
-#     ../primary_backup_gRPC/primary_backup_grpc_server.h
-#     ../primary_backup_gRPC/primary_backup_grpc_server.cpp)
-#   target_link_libraries(primary_backup_server
-#     pb_grpc_proto
-#     ${_REFLECTION}
-#     ${_GRPC_GRPCPP}
-#     ${_PROTOBUF_LIBPROTOBUF})
-#   add_library(backup_primary_client 
-#     ../backup_primary_gRPC/backup_primary_grpc_client.h
-#     ../backup_primary_gRPC/backup_primary_grpc_client.cpp)
-#   target_link_libraries(backup_primary_client
-#     bp_grpc_proto
-#     ${_REFLECTION}
-#     ${_GRPC_GRPCPP}
-#     ${_PROTOBUF_LIBPROTOBUF})
-#   ## add executables
-#   set(BACKUP ../backup.cpp ../common.h )
-#   add_executable(backup ${BACKUP})
-#   target_link_libraries(backup
-#     client_backup_server
-#     primary_backup_server
-#     backup_primary_client
-#     bp_grpc_proto
-#     pb_grpc_proto
-#     cr_grpc_proto
-#     ${_REFLECTION}
-#     ${_GRPC_GRPCPP}
-#     ${_PROTOBUF_LIBPROTOBUF})
-# endif(BUILD_BACKUP)
+## replica build
+if(BUILD_REPLICA)
+  ## generate gRPC libraries
+  add_library(client_replica_server 
+    # ../lib_primary.cpp
+    # ../common.cpp
+    ../client_replica_gRPC/client_replica_grpc_server.cpp)
+  target_link_libraries(client_replica_server
+    cr_grpc_proto
+    ${_REFLECTION}
+    ${_GRPC_GRPCPP}
+    ${_PROTOBUF_LIBPROTOBUF})
+  add_library(replica_replica_client 
+    ../replica_replica_gRPC/replica_replica_grpc_client.h
+    ../replica_replica_gRPC/replica_replica_grpc_client.cpp)
+  target_link_libraries(replica_replica_client
+    rr_grpc_proto
+    ${_REFLECTION}
+    ${_GRPC_GRPCPP}
+    ${_PROTOBUF_LIBPROTOBUF})
+  add_library(replica_replica_server 
+    # ../lib_primary.cpp
+    ../replica_replica_gRPC/replica_replica_grpc_server.h
+    ../replica_replica_gRPC/replica_replica_grpc_server.cpp)
+  target_link_libraries(replica_replica_server
+    rr_grpc_proto
+    ${_REFLECTION}
+    ${_GRPC_GRPCPP}
+    ${_PROTOBUF_LIBPROTOBUF})
+  ## add executables
+  set(REPLICA ../replica.cpp) #../common.h)
+  add_executable(replica ${PRIMARY})
+  target_link_libraries(replica
+    client_replica_server
+    replica_replica_client
+    replica_replica_server
+    rr_grpc_proto
+    cr_grpc_proto
+    ${_REFLECTION}
+    ${_GRPC_GRPCPP}
+    ${_PROTOBUF_LIBPROTOBUF})
+endif(BUILD_REPLICA)
