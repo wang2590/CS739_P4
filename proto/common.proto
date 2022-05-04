@@ -1,0 +1,6 @@
+message SignedMessage {
+    bytes message = 1;
+}
+
+message Empty {
+}
