@@ -4,6 +4,7 @@
 #include <cstdio>
 #include <iostream>
 #include <memory>
+#include <nlohmann/json.hpp>
 #include <string>
 
 #include "backup_primary_gRPC/backup_primary_grpc_server.h"
@@ -11,22 +12,16 @@
 #include "common.h"
 #include "primary_backup_gRPC/primary_backup_grpc_client.h"
 
-void usage(char *argv[]) {
-  printf("usage: %s -l listen_addr_port -t backup_ip_port [-h]\n", argv[0]);
-}
+void usage(char *argv[]) { printf("usage: %s -c config_file [-h]\n", argv[0]); }
 
 int main(int argc, char *argv[]) {
   extern char *optarg;
   int opt;
-  std::string listen_addr_port;
-  std::string backup_ip_port;
-  while ((opt = getopt(argc, argv, "l:t:h")) != -1) {
+  std::string config_file;
+  while ((opt = getopt(argc, argv, "c:h")) != -1) {
     switch (opt) {
-      case 'l':
-        listen_addr_port = optarg;
-        break;
-      case 't':
-        backup_ip_port = optarg;
+      case 'c':
+        config_file = optarg;
         break;
       case 'h':
         usage(argv);
@@ -36,28 +31,38 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
   }
-  if (listen_addr_port == "" || backup_ip_port == "") {
+  if (config_file == "") {
     usage(argv);
     exit(1);
   }
+
+  std::ifstream config_file_stream(config_file);
+  json config = json::parse(config_file_stream);
+
+  const std::string priv_key_path = config["private_key_path"];
+  std::string listen_addr_port = config["ip_port"];
 
   // open mount file
   int mount_file_fd = get_mount_file();
 
   // grpc client
   grpc::ChannelArguments args;
-  auto primary_backup_client = std::make_unique<PrimaryBackupgRPCClient>(
-      grpc::CreateChannel(backup_ip_port, grpc::InsecureChannelCredentials()),
-      mount_file_fd);
-
-  // lib_primary
-  auto lib_primary = std::make_unique<LibPrimary>(true, mount_file_fd,
-                                                  primary_backup_client.get());
+  std::vector<std::unique_ptr<ReplicaReplicaGrpcClient>> replica_clients;
+  for (auto &replica_conf : config["replicas"]) {
+    if (replica_clients.size() == config["replica_id"]) {
+      replica_clients.push_back(nullptr);
+    } else {
+      auto client = std::make_unique<ReplicaReplicaGrpcClient>(
+          grpc::CreateChannel(replica_conf["ip_port"],
+                              grpc::InsecureChannelCredentials()),
+          mount_file_fd);
+      replica_clients.push_back(std::move(client));
+    }
+  }
 
   // grpc server
-  BackupPrimarygRPCServiceImpl service1(mount_file_fd, lib_primary.get(),
-                                        primary_backup_client.get());
-  ClientServergRPCServiceImpl service2(mount_file_fd, lib_primary.get());
+  ReplicaReplicaGrpcServer service1(mount_file_fd, primary_backup_client.get());
+  ClientReplicaGrpcServiceImpl service2(mount_file_fd);
   grpc::EnableDefaultHealthCheckService(true);
   grpc::reflection::InitProtoReflectionServerBuilderPlugin();
   ServerBuilder builder;
