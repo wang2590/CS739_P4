@@ -1,5 +1,3 @@
-import "common.proto";
-
 syntax = "proto3";
 
 package client_replica;
@@ -20,21 +18,21 @@ message Operation {
     oneof operation {
         ReadRequest read = 1;
         WriteRequest write = 2;
-        RecoveryRequest recovery = 2;
+        RecoveryRequest recovery = 3;
     }
 }
 
 message ReadRequest {
-    int offset = 1;
+    int32 offset = 1;
 }
 
 message WriteRequest {
-    int offset = 1;
+    int32 offset = 1;
     bytes data = 2;
 }
 
 message RecoveryRequest {
-    int offset = 1;
+    int32 offset = 1;
     bytes data = 2;
 }
 
@@ -44,4 +42,12 @@ message Reply {
     int64 c = 3;
     int32 i = 4;
     bytes r = 5;
+}
+
+message SignedMessage {
+    bytes message = 1;
+    bytes signature = 2;
+}
+
+message Empty {
 }
