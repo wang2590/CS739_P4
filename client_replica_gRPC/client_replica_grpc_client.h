@@ -1,9 +1,9 @@
-#ifndef CLIENT_SERVER_GRPC_CLIENT_H
+#ifndef CLIENT_REPLICA_GRPC_CLIENT_H
 #define CLIENT_SERVER_GRPC_CLIENT_H
 
 #include <grpcpp/grpcpp.h>
 
-#include "client_server.grpc.pb.h"
+#include "client_replica.grpc.pb.h"
 
 using namespace std;
 using grpc::Channel;
