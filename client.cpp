@@ -1,24 +1,20 @@
 #include <iostream>
-
 #include "client_operation.h"
 #include "common.h"
 
 void usage(char *argv[]) {
-  printf("usage: %s -p primary_ip_port -b backup_ip_port [-h]\n", argv[0]);
+  printf("usage: %s -r <replica_ip_port>  [-h]\n", argv[0]);
 }
 
 int main(int argc, char *argv[]) {
   extern char *optarg;
   int opt;
-  std::string primary_ip_port;
-  std::string backup_ip_port;
+  std::vector<std::string> replicas(4);
+  int counter = 0;
   while ((opt = getopt(argc, argv, "p:b:h")) != -1) {
     switch (opt) {
       case 'p':
-        primary_ip_port = optarg;
-        break;
-      case 'b':
-        backup_ip_port = optarg;
+        replicas[counter++] = optarg;
         break;
       case 'h':
         usage(argv);
@@ -27,13 +23,15 @@ int main(int argc, char *argv[]) {
         usage(argv);
         exit(1);
     }
+    if (counter == 4) {
+      break;
+    }
   }
-  if (primary_ip_port == "" || backup_ip_port == "") {
+  if (replicas.size() < 4) {
     usage(argv);
     exit(1);
   }
-
-  client_init(primary_ip_port, backup_ip_port);
+  LibClient client = LibClient(replicas);
 
   std::string action = "";
   int offset = -1;
@@ -46,14 +44,14 @@ int main(int argc, char *argv[]) {
         std::cout << "Wrong input \n";
         continue;
       }
-      client_read(offset);
+      client.client_read(offset);
     } else if (action == "write") {
       if (!(std::cin >> offset >> data)) {
         std::cout << "Wrong input\n";
         continue;
       }
       data.resize(kBlockSize);
-      client_write(offset, data);
+      client.client_write(offset, data);
     } else if (action == "quit") {
       break;
     } else {
