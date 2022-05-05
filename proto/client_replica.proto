@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package client_replica;
 
-service ClientReplicagRPC {
+service ClientReplicaGrpc {
     rpc Request (SignedMessage) returns (Empty) {}
     rpc Reply (Empty) returns (stream SignedMessage) {}
 }

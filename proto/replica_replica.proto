@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package replica_replica;
 
-service ReplicaReplicagRPC {
+service ReplicaReplicaGrpc {
     rpc PrePrepare (PrePrepareReq) returns (Empty) {}
     rpc Prepare (SignedMessage) returns (Empty) {}
     rpc Commit (SignedMessage) returns (Empty) {}
