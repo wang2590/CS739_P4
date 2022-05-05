@@ -1,47 +1,17 @@
-import "common.proto";
-
 syntax = "proto3";
 
 package client_replica;
 
-
-service ClientReplicaGrpc {
+service ClientReplicagRPC {
     rpc Request (SignedMessage) returns (Empty) {}
     rpc Reply (Empty) returns (stream SignedMessage) {}
 }
 
-message Request {
-    Operation o = 1;
-    int64 t = 2;
-    int64 c = 3;
+message SignedMessage {
+    bytes message = 1;
+    bytes signature = 2;
 }
 
-message Operation {
-    oneof operation {
-        ReadRequest read = 1;
-        WriteRequest write = 2;
-        RecoveryRequest recovery = 2;
-    }
+message Empty {
 }
 
-message ReadRequest {
-    int offset = 1;
-}
-
-message WriteRequest {
-    int offset = 1;
-    bytes data = 2;
-}
-
-message RecoveryRequest {
-    int offset = 1;
-    bytes data = 2;
-}
-
-message Reply {
-    int32 v = 1;
-    int64 t = 2;
-    int64 c = 3;
-    int32 i = 4;
-    bytes r = 5;
-}

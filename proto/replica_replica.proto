@@ -1,10 +1,8 @@
-import "common.proto";
-
 syntax = "proto3";
 
 package replica_replica;
 
-service ReplicaReplicaGrpc {
+service ReplicaReplicagRPC {
     rpc PrePrepare (PrePrepareReq) returns (Empty) {}
     rpc Prepare (SignedMessage) returns (Empty) {}
     rpc Commit (SignedMessage) returns (Empty) {}
@@ -17,28 +15,10 @@ message PrePrepareReq {
     bytes message = 2;
 }
 
-message PrePrepare {
-    int32 v = 1;
-    int64 n = 2;
-    bytes d = 3;
+message SignedMessage {
+    bytes message = 1;
+    bytes signature = 2;
 }
 
-message Prepare {
-    int32 v = 1;
-    int64 n = 2;
-    bytes d = 3;
-    int32 i = 4;
-}
-
-message Commit {
-    int32 v = 1;
-    int64 n = 2;
-    bytes d = 3;
-    int32 i = 4;
-}
-
-message Checkpoint {
-    int64 n = 1;
-    bytes d = 2;
-    int32 i = 3;
+message Empty {
 }
