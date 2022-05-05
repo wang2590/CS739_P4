@@ -14,4 +14,3 @@ message SignedMessage {
 
 message Empty {
 }
-

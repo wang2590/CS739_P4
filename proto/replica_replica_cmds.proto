@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package replica_replica_cmds;
+
+
+message PrePrepareCmd {
+    int32 v = 1;
+    int64 n = 2;
+    bytes d = 3;
+}
+
+message PrepareCmd {
+    int32 v = 1;
+    int64 n = 2;
+    bytes d = 3;
+    int32 i = 4;
+}
+
+message CommitCmd {
+    int32 v = 1;
+    int64 n = 2;
+    bytes d = 3;
+    int32 i = 4;
+}
+
+message CheckpointCmd {
+    int64 n = 1;
+    bytes d = 2;
+    int32 i = 3;
+}
