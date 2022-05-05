@@ -137,7 +137,7 @@ if(BUILD_REPLICA)
     ${_PROTOBUF_LIBPROTOBUF})
   ## add executables
   set(REPLICA ../replica.cpp) #../common.h)
-  add_executable(replica ${PRIMARY})
+  add_executable(replica ${REPLICA})
   target_link_libraries(replica
     client_replica_server
     replica_replica_client
