@@ -8,4 +8,7 @@ std::string SignMessage(const std::string &message,
 
 bool VerifyMessage(const std::string &message, const std::string &signature,
                    const std::string &public_key);
+
+std::string Sha256Sum(const std::string &message);
+
 #endif

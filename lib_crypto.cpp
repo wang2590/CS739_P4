@@ -90,3 +90,10 @@ bool VerifyMessage(const std::string &message, const std::string &signature,
   result.resize(len);
   return result == message;
 }
+
+std::string Sha256Sum(const std::string &message) {
+  std::string result(SHA256_DIGEST_LENGTH, '\0');
+  SHA256(reinterpret_cast<const unsigned char *>(message.c_str()),
+         message.size(), reinterpret_cast<unsigned char *>(result.data()));
+  return result;
+}
