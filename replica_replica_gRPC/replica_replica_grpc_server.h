@@ -3,11 +3,9 @@
 
 #include <grpcpp/ext/proto_server_reflection_plugin.h>
 #include <grpcpp/grpcpp.h>
-#include <grpcpp/health_check_service_interface.h>
 
-#include "../lib_primary.h"
-#include "../primary_backup_gRPC/primary_backup_grpc_client.h"
-#include "backup_primary.grpc.pb.h"
+#include "replica_replica.grpc.pb.h"
+#include "replica_replica_grpc_client.h"
 
 using namespace std;
 
@@ -17,27 +15,18 @@ using grpc::ServerContext;
 using grpc::ServerReader;
 using grpc::Status;
 
-using backup_primary::BackupPrimarygRPC;
-using backup_primary::PrimaryHeatbeatReply;
-using backup_primary::PrimaryHeatbeatReq;
-using backup_primary::RestoreDataReply;
-using backup_primary::RestoreDataReq;
+using replica_replica::ReplicaReplicaGrpc;
 
-class BackupPrimarygRPCServiceImpl final : public BackupPrimarygRPC::Service {
+class ReplicaReplicaGrpcServiceImpl final : public ReplicaReplicaGrpc::Service {
  public:
-  BackupPrimarygRPCServiceImpl(int mount_file_fd, LibPrimary* lib_primary,
-                               PrimaryBackupgRPCClient* primary_backup_client);
-  Status RestoreData(ServerContext* context,
-                     ServerReader<RestoreDataReq>* reader,
-                     RestoreDataReply* reply) override;
-  Status PrimaryHeartbeat(ServerContext* context,
-                          const PrimaryHeatbeatReq* request,
-                          PrimaryHeatbeatReply* reply) override;
+  ReplicaReplicaGrpcServiceImpl(
+      int mount_file_fd, ReplicaReplicaGrpcClient* primary_backup_client);
+  Status PrePrepare(ServerContext* context, const PrePrepareReq* request,
+                    Empty* reply) override;
 
  private:
   int mount_file_fd_;
-  LibPrimary* lib_primary_;
-  PrimaryBackupgRPCClient* primary_backup_client_;
+  ReplicaReplicaGrpcClient* primary_backup_client_;
 };
 
 void RunServer(string serverAddress);

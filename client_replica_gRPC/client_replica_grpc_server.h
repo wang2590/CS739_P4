@@ -16,7 +16,7 @@ using grpc::ServerBuilder;
 using grpc::ServerContext;
 using grpc::Status;
 
-using client_replica::ClientReplicagRPC;
+using client_replica::ClientReplicaGrpc;
 using client_replica::Empty;
 using client_replica::SignedMessage;
 

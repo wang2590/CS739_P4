@@ -1,4 +1,4 @@
-#include "backup_primary_grpc_client.h"
+#include "replica_replica_grpc_client.h"
 
 #include <errno.h>
 #include <grpcpp/grpcpp.h>
@@ -10,16 +10,10 @@
 #include <string>
 
 #include "../common.h"
-#include "backup_primary.grpc.pb.h"
+#include "replica_replica.grpc.pb.h"
 
 #define TIMEOUT 10 * 1000  // unit in ms, 10 seconds
 #define HEARTBEAT 6        // random integer
-
-using backup_primary::BackupPrimarygRPC;
-using backup_primary::PrimaryHeatbeatReply;
-using backup_primary::PrimaryHeatbeatReq;
-using backup_primary::RestoreDataReply;
-using backup_primary::RestoreDataReq;
 
 using grpc::Channel;
 using grpc::ClientContext;
@@ -27,13 +21,16 @@ using grpc::ClientReader;
 using grpc::ClientWriter;
 using grpc::Status;
 
+using replica_replica::ReplicaReplicaGrpc;
+using replica_replica::ReplicaReplicaGrpcClient;
+
 using namespace std;
 
-BackupPrimarygRPCClient::BackupPrimarygRPCClient(
+ReplicaReplicaGrpcClient::ReplicaReplicaGrpcClient(
     std::shared_ptr<Channel> channel, const int& mount_file_fd)
-    : stub_(BackupPrimarygRPC::NewStub(channel)), file_fd(mount_file_fd) {}
+    : stub_(ReplicaReplicaGrpc::NewStub(channel)), file_fd(mount_file_fd) {}
 
-int BackupPrimarygRPCClient::clientRestoreData(const vector<int>& offset_v) {
+int ReplicaReplicaGrpcClient::clientRestoreData(const vector<int>& offset_v) {
   cout << "backup primary grpc client restore data write" << endl;
   RestoreDataReq request;
   RestoreDataReply reply;
@@ -52,7 +49,7 @@ int BackupPrimarygRPCClient::clientRestoreData(const vector<int>& offset_v) {
       break;
     }
     // crash testing code
-    if (buf.find("crash_backup_primary_grpc_client_restore_data") !=
+    if (buf.find("crash_replica_replica_grpc_client_restore_data") !=
         string::npos) {
       cout << "Killing client process in write()\n";
       kill(getpid(), SIGABRT);
@@ -70,7 +67,7 @@ int BackupPrimarygRPCClient::clientRestoreData(const vector<int>& offset_v) {
   return status.error_code();
 }
 
-bool BackupPrimarygRPCClient::clientPrimaryHeartbeat() {
+bool ReplicaReplicaGrpcClient::clientPrimaryHeartbeat() {
   cout << "primary heartbeat check client " << endl;
   PrimaryHeatbeatReq request;
   request.set_beat(HEARTBEAT);
@@ -97,7 +94,7 @@ bool BackupPrimarygRPCClient::clientPrimaryHeartbeat() {
   return false;
 }
 
-string BackupPrimarygRPCClient::read(const int offset) {
+string ReplicaReplicaGrpcClient::read(const int offset) {
   string buf;
   buf.resize(kBlockSize);
   if (pread(file_fd, buf.data(), kBlockSize, offset) < 0) {

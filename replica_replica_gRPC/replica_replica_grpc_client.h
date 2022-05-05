@@ -3,28 +3,27 @@
 
 #include <grpcpp/grpcpp.h>
 
-#include "backup_primary.grpc.pb.h"
+#include <memory>
+
+#include "replica_replica.grpc.pb.h"
 
 using namespace std;
+
 using grpc::Channel;
 using grpc::ClientContext;
 using grpc::Status;
 
-using backup_primary::BackupPrimarygRPC;
-using backup_primary::PrimaryHeatbeatReply;
-using backup_primary::PrimaryHeatbeatReq;
-using backup_primary::RestoreDataReply;
-using backup_primary::RestoreDataReq;
+using replica_replica::ReplicaReplicaGrpc;
 
-class BackupPrimarygRPCClient {
+class ReplicaReplicaGrpcClient {
  private:
-  std::unique_ptr<BackupPrimarygRPC::Stub> stub_;
+  std::unique_ptr<ReplicaReplicaGrpc::Stub> stub_;
   int file_fd;
   string read(const int offset);
 
  public:
-  BackupPrimarygRPCClient(std::shared_ptr<Channel> channel,
-                          const int& mount_file_fd);
+  ReplicaReplicaGrpcClient(std::shared_ptr<Channel> channel,
+                           const int& mount_file_fd);
   int clientRestoreData(const vector<int>& offset_v);
   bool clientPrimaryHeartbeat();
 };
@@ -36,8 +35,8 @@ How to use this class:
 default largest gRPC size = 4MB
 
 const std::string target_str = "128.105.145.95:75247";
-BackupPrimarygRPCClient * grpcClient = new
-BackupPrimarygRPCClient(grpc::CreateChannel(target_str,
+ReplicaReplicaGrpcClient * grpcClient = new
+ReplicaReplicaGrpcClient(grpc::CreateChannel(target_str,
 grpc::InsecureChannelCredentials(), ch_args));
 
 */
