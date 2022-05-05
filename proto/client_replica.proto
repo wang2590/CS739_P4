@@ -2,46 +2,9 @@ syntax = "proto3";
 
 package client_replica;
 
-
-service ClientReplicaGrpc {
+service ClientReplicagRPC {
     rpc Request (SignedMessage) returns (Empty) {}
     rpc Reply (Empty) returns (stream SignedMessage) {}
-}
-
-message Request {
-    Operation o = 1;
-    int64 t = 2;
-    int64 c = 3;
-}
-
-message Operation {
-    oneof operation {
-        ReadRequest read = 1;
-        WriteRequest write = 2;
-        RecoveryRequest recovery = 3;
-    }
-}
-
-message ReadRequest {
-    int32 offset = 1;
-}
-
-message WriteRequest {
-    int32 offset = 1;
-    bytes data = 2;
-}
-
-message RecoveryRequest {
-    int32 offset = 1;
-    bytes data = 2;
-}
-
-message Reply {
-    int32 v = 1;
-    int64 t = 2;
-    int64 c = 3;
-    int32 i = 4;
-    bytes r = 5;
 }
 
 message SignedMessage {
@@ -51,3 +14,4 @@ message SignedMessage {
 
 message Empty {
 }
+
