@@ -3,7 +3,7 @@
 #include "common.h"
 
 void usage(char *argv[]) {
-  printf("usage: %s -r <replicas_ip_port>  [-h]\n", argv[0]);
+  printf("usage: %s -r <replica_ip_port>  [-h]\n", argv[0]);
 }
 
 int main(int argc, char *argv[]) {
