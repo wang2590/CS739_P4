@@ -6,9 +6,7 @@
 template<typename T>
 class consumer_queue {
     public:
-        consumer_queue(){
-            this->max = 4;
-        };
+        consumer_queue();
         
         bool consumer_ready() {
             return this->buffer.empty();
@@ -30,7 +28,7 @@ class consumer_queue {
 
     private:
         std::queue<T> buffer;
-        int max;
+        int max{4};
 };
 
 
