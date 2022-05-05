@@ -1,5 +1,5 @@
 #ifndef CLIENT_REPLICA_GRPC_CLIENT_H
-#define CLIENT_SERVER_GRPC_CLIENT_H
+#define CLIENT_REPLICA_GRPC_CLIENT_H
 
 #include <grpcpp/grpcpp.h>
 
@@ -10,31 +10,18 @@ using grpc::Channel;
 using grpc::ClientContext;
 using grpc::Status;
 
-using client_server::ClientServergRPC;
-using client_server::ReadBlockReply;
-using client_server::ReadBlockReq;
-using client_server::WriteBlockReply;
-using client_server::WriteBlockReq;
+using client_replica::ClientServergRPC;
+using client_replica::Empty;
+using client_replica::SignedMessage;
 
-class ClientServergRPCClient {
+class ClientReplicaGrpcClient {
  private:
-  std::unique_ptr<ClientServergRPC::Stub> stub_;
+  std::unique_ptr<ClientReplicaGrpc::Stub> stub_;
 
  public:
-  ClientServergRPCClient(std::shared_ptr<Channel> channel);
-  int clientReadBlock(const int& offset, string& buf);
-  int clientWriteBlock(const int& offset, const string& buf);
+  ClientReplicaGrpcClient(std::shared_ptr<Channel> channel);
+  int clientRequest(const string& msg, const string& sig);
+  int clientReply();
 };
 
 #endif
-
-/*
-How to use this class:
-default largest gRPC size = 4MB
-
-const std::string target_str = "128.105.145.95:75247";
-ClientServergRPCClient * grpcClient = new
-ClientServergRPCClient(grpc::CreateChannel(target_str,
-grpc::InsecureChannelCredentials(), ch_args));
-
-*/

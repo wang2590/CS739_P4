@@ -1,5 +1,5 @@
-#ifndef CLIENT_SERVER_GRPC_SERVER_H
-#define CLIENT_SERVER_GRPC_SERVER_H
+#ifndef CLIENT_REPLICA_GRPC_SERVER_H
+#define CLIENT_REPLICA_GRPC_SERVER_H
 
 #include <grpcpp/ext/proto_server_reflection_plugin.h>
 #include <grpcpp/grpcpp.h>
@@ -7,8 +7,7 @@
 
 #include <shared_mutex>
 
-#include "../lib_primary.h"
-#include "client_server.grpc.pb.h"
+#include "client_replica.grpc.pb.h"
 
 using namespace std;
 
@@ -17,23 +16,20 @@ using grpc::ServerBuilder;
 using grpc::ServerContext;
 using grpc::Status;
 
-using client_server::ClientServergRPC;
-using client_server::ReadBlockReply;
-using client_server::ReadBlockReq;
-using client_server::WriteBlockReply;
-using client_server::WriteBlockReq;
+using client_replica::ClientReplicagRPC;
+using client_replica::Empty;
+using client_replica::SignedMessage;
 
-class ClientServergRPCServiceImpl final : public ClientServergRPC::Service {
+class ClientReplicaGrpcServiceImpl final : public ClientReplicaGrpc::Service {
  public:
-  ClientServergRPCServiceImpl(int mount_file_fd, LibPrimary* lib_primary);
-  Status ReadBlock(ServerContext* context, const ReadBlockReq* request,
-                   ReadBlockReply* reply) override;
-  Status WriteBlock(ServerContext* context, const WriteBlockReq* request,
-                    WriteBlockReply* reply) override;
+  ClientReplicaGrpcServiceImpl(int mount_file_fd);
+  Status Request(ServerContext* context, const SignedMessage* request,
+                 Empty* reply) override;
+  Status Reply(ServerContext* context, const Empty* request,
+               SignedMessage* reply) override;
 
  private:
   int mount_file_fd_;
-  LibPrimary* lib_primary_;
   std::shared_mutex lock_;
 };
 
