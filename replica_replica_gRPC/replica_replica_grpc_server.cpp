@@ -20,21 +20,10 @@ using grpc::ServerBuilder;
 using grpc::ServerContext;
 using grpc::Status;
 
-using replica_replica::Empty;
-using replica_replica::PrePrepareReq;
-using replica_replica::ReplicaReplicaGrpc;
-using replica_replica::SignedMessage;
-
 using namespace std;
 
 ReplicaReplicaGrpcServiceImpl::ReplicaReplicaGrpcServiceImpl(int mount_file_fd)
     : mount_file_fd_(mount_file_fd) {}
-
-Status ReplicaReplicaGrpcServiceImpl::PrePrepare(ServerContext* context,
-                                                 const PrePrepareReq* request,
-                                                 Empty* reply) {
-  return Status::OK;
-}
 
 Status ReplicaReplicaGrpcServiceImpl::PrePrepare(ServerContext* context,
                                                  const PrePrepareReq* request,

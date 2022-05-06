@@ -22,7 +22,6 @@ using grpc::ServerBuilder;
 using grpc::ServerContext;
 using grpc::Status;
 
-using client_replica::ClientServergRPC;
 using client_replica::Empty;
 using client_replica::SignedMessage;
 
@@ -34,6 +33,7 @@ ClientReplicaGrpcServiceImpl::ClientReplicaGrpcServiceImpl(int mount_file_fd)
 Status ClientReplicaGrpcServiceImpl::Request(ServerContext* context,
                                              const SignedMessage* request,
                                              Empty* reply) {
+  return Status::OK;
   // std::shared_lock<std::shared_mutex> read_lock(lock_);
 
   // string buf;
@@ -50,9 +50,10 @@ Status ClientReplicaGrpcServiceImpl::Request(ServerContext* context,
 
   // return Status::OK;
 }
-Status ClientReplicaGrpcServiceImpl::Reply(ServerContext* context,
-                                           const Empty* request,
-                                           SignedMessage* reply) {
+Status ClientReplicaGrpcServiceImpl::Reply(
+    ServerContext* context, const Empty* request,
+    ServerWriter<SignedMessage>* reply_writer) {
+  return Status::OK;
   // std::unique_lock<std::shared_mutex> write_lock(lock_);
 
   // // testing code

@@ -14,6 +14,7 @@ using namespace std;
 using grpc::Server;
 using grpc::ServerBuilder;
 using grpc::ServerContext;
+using grpc::ServerWriter;
 using grpc::Status;
 
 using client_replica::ClientReplicaGrpc;
@@ -26,7 +27,7 @@ class ClientReplicaGrpcServiceImpl final : public ClientReplicaGrpc::Service {
   Status Request(ServerContext* context, const SignedMessage* request,
                  Empty* reply) override;
   Status Reply(ServerContext* context, const Empty* request,
-               SignedMessage* reply) override;
+               ServerWriter<SignedMessage>* reply_writer) override;
 
  private:
   int mount_file_fd_;

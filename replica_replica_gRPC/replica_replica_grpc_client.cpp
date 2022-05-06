@@ -32,6 +32,7 @@ ReplicaReplicaGrpcClient::ReplicaReplicaGrpcClient(
 
 int ReplicaReplicaGrpcClient::ReplicaPrePrepareClient(
     const string& msg, const string& sig, const string& client_msg) {
+  return 0;
   // RestoreDataReq request;
   // RestoreDataReply reply;
   // ClientContext context;
@@ -67,11 +68,19 @@ int ReplicaReplicaGrpcClient::ReplicaPrePrepareClient(
   // return status.error_code();
 }
 int ReplicaReplicaGrpcClient::ReplicaPrepareClient(const string& msg,
-                                                   const string& sig) {}
+                                                   const string& sig) {
+  return 0;
+}
 int ReplicaReplicaGrpcClient::ReplicaCommitClient(const string& msg,
-                                                  const string& sig) {}
+                                                  const string& sig) {
+  return 0;
+}
 int ReplicaReplicaGrpcClient::ReplicaRelayRequestClient(const string& msg,
-                                                        const string& sig) {}
+                                                        const string& sig) {
+  return 0;
+}
 // TODO: checkoint might remove for storing all logs
 int ReplicaReplicaGrpcClient::ReplicaCheckpointClient(const string& msg,
-                                                      const string& sig) {}
+                                                      const string& sig) {
+  return 0;
+}
