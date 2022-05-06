@@ -12,21 +12,28 @@ using namespace std;
 using grpc::Server;
 using grpc::ServerBuilder;
 using grpc::ServerContext;
-using grpc::ServerReader;
+// using grpc::ServerReader;
 using grpc::Status;
 
 using replica_replica::ReplicaReplicaGrpc;
 
 class ReplicaReplicaGrpcServiceImpl final : public ReplicaReplicaGrpc::Service {
  public:
-  ReplicaReplicaGrpcServiceImpl(
-      int mount_file_fd, ReplicaReplicaGrpcClient* primary_backup_client);
+  ReplicaReplicaGrpcServiceImpl(int mount_file_fd);
   Status PrePrepare(ServerContext* context, const PrePrepareReq* request,
+                    Empty* reply) override;
+  Status Prepare(ServerContext* context, const SignedMessage* request,
+                 Empty* reply) override;
+  Status Commit(ServerContext* context, const SignedMessage* request,
+                Empty* reply) override;
+  Status RelayRequest(ServerContext* context, const SignedMessage* request,
+                      Empty* reply) override;
+  Status Checkpoint(ServerContext* context, const SignedMessage* request,
                     Empty* reply) override;
 
  private:
   int mount_file_fd_;
-  ReplicaReplicaGrpcClient* primary_backup_client_;
+  // ReplicaReplicaGrpcClient* primary_backup_client_;
 };
 
 void RunServer(string serverAddress);

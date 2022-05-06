@@ -66,8 +66,12 @@ int ReplicaReplicaGrpcClient::ReplicaPrePrepareClient(
   //      << endl;
   // return status.error_code();
 }
-int ReplicaPrepareClient(const string& msg, const string& sig) {}
-int ReplicaCommitClient(const string& msg, const string& sig) {}
-int ReplicaRelayRequestClient(const string& msg, const string& sig) {}
+int ReplicaReplicaGrpcClient::ReplicaPrepareClient(const string& msg,
+                                                   const string& sig) {}
+int ReplicaReplicaGrpcClient::ReplicaCommitClient(const string& msg,
+                                                  const string& sig) {}
+int ReplicaReplicaGrpcClient::ReplicaRelayRequestClient(const string& msg,
+                                                        const string& sig) {}
 // TODO: checkoint might remove for storing all logs
-int ReplicaCheckpointClient(const string& msg, const string& sig) {}
+int ReplicaReplicaGrpcClient::ReplicaCheckpointClient(const string& msg,
+                                                      const string& sig) {}

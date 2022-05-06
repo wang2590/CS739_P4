@@ -20,21 +20,45 @@ using grpc::ServerBuilder;
 using grpc::ServerContext;
 using grpc::Status;
 
-using replica_replica::PrimaryHeatbeatReply;
+using replica_replica::Empty;
+using replica_replica::PrePrepareReq;
+using replica_replica::ReplicaReplicaGrpc;
+using replica_replica::SignedMessage;
 
 using namespace std;
 
-ReplicaReplicaGrpcServiceImpl::ReplicaReplicaGrpcServiceImpl(
-    int mount_file_fd, ReplicaReplicaGrpcClient* primary_backup_client)
-    : mount_file_fd_(mount_file_fd),
-      primary_backup_client_(primary_backup_client) {}
+ReplicaReplicaGrpcServiceImpl::ReplicaReplicaGrpcServiceImpl(int mount_file_fd)
+    : mount_file_fd_(mount_file_fd) {}
 
 Status ReplicaReplicaGrpcServiceImpl::PrePrepare(ServerContext* context,
                                                  const PrePrepareReq* request,
                                                  Empty* reply) {
-  // lib_primary_->BackupAlive();
+  return Status::OK;
+}
 
-  // reply->set_beat(request->beat());
+Status ReplicaReplicaGrpcServiceImpl::PrePrepare(ServerContext* context,
+                                                 const PrePrepareReq* request,
+                                                 Empty* reply) {
+  return Status::OK;
+}
+Status ReplicaReplicaGrpcServiceImpl::Prepare(ServerContext* context,
+                                              const SignedMessage* request,
+                                              Empty* reply) {
+  return Status::OK;
+}
+Status ReplicaReplicaGrpcServiceImpl::Commit(ServerContext* context,
+                                             const SignedMessage* request,
+                                             Empty* reply) {
+  return Status::OK;
+}
+Status ReplicaReplicaGrpcServiceImpl::RelayRequest(ServerContext* context,
+                                                   const SignedMessage* request,
+                                                   Empty* reply) {
+  return Status::OK;
+}
+Status ReplicaReplicaGrpcServiceImpl::Checkpoint(ServerContext* context,
+                                                 const SignedMessage* request,
+                                                 Empty* reply) {
   return Status::OK;
 }
 
