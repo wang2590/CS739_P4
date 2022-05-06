@@ -7,12 +7,13 @@ service ReplicaReplicaGrpc {
     rpc Prepare (SignedMessage) returns (Empty) {}
     rpc Commit (SignedMessage) returns (Empty) {}
     rpc RelayRequest (SignedMessage) returns (Empty) {}
+    // TODO: checkoint might remove for storing all logs
     rpc Checkpoint (SignedMessage) returns (Empty) {}
 }
 
 message PrePrepareReq {
     SignedMessage preprepare = 1;
-    bytes message = 2;
+    bytes client_message = 2;
 }
 
 message SignedMessage {

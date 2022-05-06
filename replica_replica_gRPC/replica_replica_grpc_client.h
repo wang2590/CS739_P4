@@ -1,5 +1,5 @@
-#ifndef BACKUP_PRIMARY_GRPC_CLIENT_H
-#define BACKUP_PRIMARY_GRPC_CLIENT_H
+#ifndef REPLICA_REPLICA_GRPC_CLIENT_H
+#define REPLICA_REPLICA_GRPC_CLIENT_H
 
 #include <grpcpp/grpcpp.h>
 
@@ -18,14 +18,16 @@ using replica_replica::ReplicaReplicaGrpc;
 class ReplicaReplicaGrpcClient {
  private:
   std::unique_ptr<ReplicaReplicaGrpc::Stub> stub_;
-  int file_fd;
-  string read(const int offset);
 
  public:
-  ReplicaReplicaGrpcClient(std::shared_ptr<Channel> channel,
-                           const int& mount_file_fd);
-  int clientRestoreData(const vector<int>& offset_v);
-  bool clientPrimaryHeartbeat();
+  ReplicaReplicaGrpcClient(std::shared_ptr<Channel> channel);
+  int ReplicaPrePrepareClient(const string& msg, const string& sig,
+                              const string& client_msg);
+  int ReplicaPrepareClient(const string& msg, const string& sig);
+  int ReplicaCommitClient(const string& msg, const string& sig);
+  int ReplicaRelayRequestClient(const string& msg, const string& sig);
+  // TODO: checkoint might remove for storing all logs
+  int ReplicaCheckpointClient(const string& msg, const string& sig);
 };
 
 #endif

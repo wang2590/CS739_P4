@@ -2,32 +2,31 @@ syntax = "proto3";
 
 package client_replica_cmds;
 
-
 message RequestCmd {
-    Operation o = 1;
+    OperationCmd o = 1;
     int64 t = 2;
     int64 c = 3;
 }
 
 message OperationCmd {
     oneof operation {
-        ReadRequest read = 1;
-        WriteRequest write = 2;
-        RecoveryRequest recovery = 2;
+        ReadRequestCmd read = 1;
+        WriteRequestCmd write = 2;
+        RecoveryRequestCmd recovery = 3;
     }
 }
 
 message ReadRequestCmd {
-    int offset = 1;
+    int32 offset = 1;
 }
 
 message WriteRequestCmd {
-    int offset = 1;
+    int32 offset = 1;
     bytes data = 2;
 }
 
 message RecoveryRequestCmd {
-    int offset = 1;
+    int32 offset = 1;
     bytes data = 2;
 }
 

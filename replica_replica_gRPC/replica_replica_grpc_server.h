@@ -1,5 +1,5 @@
-#ifndef BACKUP_PRIMARY_GRPC_SERVER_H
-#define BACKUP_PRIMARY_GRPC_SERVER_H
+#ifndef REPLICA_REPLICA_GRPC_SERVER_H
+#define REPLICA_REPLICA_GRPC_SERVER_H
 
 #include <grpcpp/ext/proto_server_reflection_plugin.h>
 #include <grpcpp/grpcpp.h>
