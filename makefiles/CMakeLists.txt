@@ -17,6 +17,9 @@ FetchContent_Declare(json URL https://github.com/nlohmann/json/releases/download
 FetchContent_MakeAvailable(json)
 
 # Generate Proto file
+## common proto -> comm_proto
+get_filename_component(comm_proto "../proto/common.proto" ABSOLUTE)
+get_filename_component(comm_proto_path "${comm_proto}" PATH)
 ## client replica proto -> cr_proto
 get_filename_component(cr_proto "../proto/client_replica.proto" ABSOLUTE)
 get_filename_component(cr_proto_path "${cr_proto}" PATH)
@@ -25,6 +28,17 @@ get_filename_component(rr_proto "../proto/replica_replica.proto" ABSOLUTE)
 get_filename_component(rr_proto_path "${rr_proto}" PATH)
 
 # Generated gRPC sources files
+## common proto -> comm_proto
+set(comm_proto_srcs "${CMAKE_CURRENT_BINARY_DIR}/common.pb.cc")
+set(comm_proto_hdrs "${CMAKE_CURRENT_BINARY_DIR}/common.pb.h")
+add_custom_command(
+      OUTPUT "${comm_proto_srcs}" "${comm_proto_hdrs}"
+      COMMAND ${_PROTOBUF_PROTOC}
+      ARGS --cpp_out "${CMAKE_CURRENT_BINARY_DIR}"
+        -I "${comm_proto_path}"
+        --plugin=protoc-gen-grpc="${_GRPC_CPP_PLUGIN_EXECUTABLE}"
+        "${comm_proto}"
+      DEPENDS "${comm_proto}")
 ## client server proto -> cr_proto
 set(cr_proto_srcs "${CMAKE_CURRENT_BINARY_DIR}/client_replica.pb.cc")
 set(cr_proto_hdrs "${CMAKE_CURRENT_BINARY_DIR}/client_replica.pb.h")
@@ -56,6 +70,14 @@ add_custom_command(
 
 # Include all the generated *.pb.h files
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
+## comm_grpc_proto
+add_library(comm_grpc_proto
+  ${comm_proto_srcs}
+  ${comm_proto_hdrs})
+target_link_libraries(comm_grpc_proto
+  ${_REFLECTION}
+  ${_GRPC_GRPCPP}
+  ${_PROTOBUF_LIBPROTOBUF})
 ## cr_grpc_proto
 add_library(cr_grpc_proto
   ${cr_grpc_srcs}
@@ -63,6 +85,7 @@ add_library(cr_grpc_proto
   ${cr_proto_srcs}
   ${cr_proto_hdrs})
 target_link_libraries(cr_grpc_proto
+  comm_grpc_proto
   ${_REFLECTION}
   ${_GRPC_GRPCPP}
   ${_PROTOBUF_LIBPROTOBUF})
@@ -73,6 +96,7 @@ add_library(rr_grpc_proto
   ${rr_proto_srcs}
   ${rr_proto_hdrs})
 target_link_libraries(rr_grpc_proto
+  comm_grpc_proto
   ${_REFLECTION}
   ${_GRPC_GRPCPP}
   ${_PROTOBUF_LIBPROTOBUF})
@@ -114,7 +138,7 @@ endif(BUILD_CLIENT)
 ## replica build
 if(BUILD_REPLICA)
   ## generate gRPC libraries
-  add_library(client_replica_server 
+  add_library(client_replica_server
     ../common.cpp
     ../client_replica_gRPC/client_replica_grpc_server.cpp)
   target_link_libraries(client_replica_server
@@ -122,17 +146,14 @@ if(BUILD_REPLICA)
     ${_REFLECTION}
     ${_GRPC_GRPCPP}
     ${_PROTOBUF_LIBPROTOBUF})
-  add_library(replica_replica_client 
-    ../replica_replica_gRPC/replica_replica_grpc_client.h
+  add_library(replica_replica_client
     ../replica_replica_gRPC/replica_replica_grpc_client.cpp)
   target_link_libraries(replica_replica_client
     rr_grpc_proto
     ${_REFLECTION}
     ${_GRPC_GRPCPP}
     ${_PROTOBUF_LIBPROTOBUF})
-  add_library(replica_replica_server 
-    # ../lib_primary.cpp
-    ../replica_replica_gRPC/replica_replica_grpc_server.h
+  add_library(replica_replica_server
     ../replica_replica_gRPC/replica_replica_grpc_server.cpp)
   target_link_libraries(replica_replica_server
     rr_grpc_proto
