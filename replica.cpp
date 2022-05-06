@@ -2,6 +2,7 @@
 #include <unistd.h>
 
 #include <cstdio>
+#include <fstream>
 #include <iostream>
 #include <memory>
 #include <nlohmann/json.hpp>
@@ -11,6 +12,8 @@
 #include "common.h"
 #include "replica_replica_gRPC/replica_replica_grpc_client.h"
 #include "replica_replica_gRPC/replica_replica_grpc_server.h"
+
+using nlohmann::json;
 
 void usage(char *argv[]) { printf("usage: %s -c config_file [-h]\n", argv[0]); }
 
@@ -61,7 +64,8 @@ int main(int argc, char *argv[]) {
   }
 
   // grpc server
-  ReplicaReplicaGrpcServer service1(mount_file_fd, primary_backup_client.get());
+  ReplicaReplicaGrpcServiceImpl service1(mount_file_fd,
+                                         primary_backup_client.get());
   ClientReplicaGrpcServiceImpl service2(mount_file_fd);
   grpc::EnableDefaultHealthCheckService(true);
   grpc::reflection::InitProtoReflectionServerBuilderPlugin();
