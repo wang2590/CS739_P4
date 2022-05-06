@@ -10,6 +10,7 @@
 #include <string>
 
 #include "../common.h"
+#include "../lib_crypto.h"
 #include "replica_replica.grpc.pb.h"
 
 #define TIMEOUT 10 * 1000  // unit in ms, 10 seconds
@@ -20,52 +21,37 @@ using grpc::ClientContext;
 // using grpc::ClientWriter;
 using grpc::Status;
 
-using common::Empty;
-using common::SignedMessage;
-using replica_replica::PrePrepareReq;
-using replica_replica::ReplicaReplicaGrpc;
-using namespace std;
+using namespace common;
+using namespace replica_replica;
 
 ReplicaReplicaGrpcClient::ReplicaReplicaGrpcClient(
-    std::shared_ptr<Channel> channel)
-    : stub_(ReplicaReplicaGrpc::NewStub(channel)) {}
+    std::shared_ptr<Channel> channel, ReplicaState* state)
+    : stub_(ReplicaReplicaGrpc::NewStub(channel)), state_(state) {}
 
-int ReplicaReplicaGrpcClient::ReplicaPrePrepareClient(
-    const string& msg, const string& sig, const string& client_msg) {
-  return 0;
-  // RestoreDataReq request;
-  // RestoreDataReply reply;
-  // ClientContext context;
-  // std::chrono::time_point deadline =
-  //     std::chrono::system_clock::now() + std::chrono::milliseconds(TIMEOUT);
-  // context.set_deadline(deadline);
-  // unique_ptr<ClientWriter<RestoreDataReq>> writer(
-  //     stub_->RestoreData(&context, &reply));
-  // for (int i : offset_v) {
-  //   std::string buf = read(i);
-  //   request.set_buf(buf);
-  //   request.set_offset(i);
-  //   if (!writer->Write(request)) {
-  //     // Broken stream.
-  //     break;
-  //   }
-  //   // crash testing code
-  //   if (buf.find("crash_replica_replica_grpc_client_restore_data") !=
-  //       string::npos) {
-  //     cout << "Killing client process in write()\n";
-  //     kill(getpid(), SIGABRT);
-  //   }
-  // }
+int ReplicaReplicaGrpcClient::ReplicaPrePrepareClient(int32_t v, int64_t n,
+                                                      const string& m) {
+  PrePrepareCmd cmd;
+  cmd.set_v(v);
+  cmd.set_n(n);
+  cmd.set_d(Sha256Sum(m));
 
-  // writer->WritesDone();
-  // Status status = writer->Finish();
+  std::string serilized_cmd = cmd.SerializeAsString();
+  if (serilized_cmd == "") return -1;
 
-  // if (status.ok()) {
-  //   return reply.err();
-  // }
-  // cout << "There was an error in the server Write " << status.error_code()
-  //      << endl;
-  // return status.error_code();
+  PrePrepareReq request;
+  request.mutable_preprepare()->set_message(serilized_cmd);
+  request.mutable_preprepare()->set_signature(
+      SignMessage(serilized_cmd, state_->private_key_path));
+  request.set_client_message(m);
+
+  Empty reply;
+  ClientContext context;
+  Status status = stub_->PrePrepare(&context, request, &reply);
+
+  if (status.ok())
+    return 0;
+  else
+    return status.error_code();
 }
 int ReplicaReplicaGrpcClient::ReplicaPrepareClient(const string& msg,
                                                    const string& sig) {

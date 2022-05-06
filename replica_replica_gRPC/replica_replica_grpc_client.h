@@ -5,6 +5,7 @@
 
 #include <memory>
 
+#include "../replica_state.h"
 #include "replica_replica.grpc.pb.h"
 
 using namespace std;
@@ -12,22 +13,20 @@ using namespace std;
 using grpc::Channel;
 using grpc::ClientContext;
 using grpc::Status;
-
-using replica_replica::ReplicaReplicaGrpc;
-
 class ReplicaReplicaGrpcClient {
- private:
-  std::unique_ptr<ReplicaReplicaGrpc::Stub> stub_;
-
  public:
-  ReplicaReplicaGrpcClient(std::shared_ptr<Channel> channel);
-  int ReplicaPrePrepareClient(const string& msg, const string& sig,
-                              const string& client_msg);
+  ReplicaReplicaGrpcClient(std::shared_ptr<Channel> channel,
+                           ReplicaState* state);
+  int ReplicaPrePrepareClient(int32_t v, int64_t n, const string& m);
   int ReplicaPrepareClient(const string& msg, const string& sig);
   int ReplicaCommitClient(const string& msg, const string& sig);
   int ReplicaRelayRequestClient(const string& msg, const string& sig);
   // TODO: checkoint might remove for storing all logs
   int ReplicaCheckpointClient(const string& msg, const string& sig);
+
+ private:
+  std::unique_ptr<replica_replica::ReplicaReplicaGrpc::Stub> stub_;
+  ReplicaState* state_;
 };
 
 #endif
