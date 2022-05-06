@@ -1,5 +1,5 @@
-# CS739_P3
-Simple Block storage w/ primary backup
+# CS739_P4
+Block store w/ BFT replication guarantee
 
 ### How to build:
 
@@ -10,7 +10,7 @@ Make sure to assign CMAKE_PREFIX_PATH with local gRPC build directory.
 - make -j4
 
 ### How to Run:
-Primary: `./primary -l <primary ip address> -t <backup ip address>`
+Replica: `./primary -l <primary ip address> -t <backup ip address>`
 
 Backup: `./backup -l <backup ip address> -t <primary ip address>`
 
