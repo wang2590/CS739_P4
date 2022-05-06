@@ -36,7 +36,7 @@ int ReplicaReplicaGrpcClient::ReplicaPrePrepareClient(int32_t v, int64_t n,
   cmd.set_d(Sha256Sum(m));
 
   PrePrepareReq request;
-  if (PrepareSignedMessage(cmd, request.mutable_preprepare()) < 0) return -1;
+  if (CreateSignedMessage(cmd, request.mutable_preprepare()) < 0) return -1;
   request.set_client_message(m);
 
   Empty reply;
@@ -58,7 +58,7 @@ int ReplicaReplicaGrpcClient::ReplicaPrepareClient(int32_t v, int64_t n,
   cmd.set_i(i);
 
   SignedMessage request;
-  if (PrepareSignedMessage(cmd, &request) < 0) return -1;
+  if (CreateSignedMessage(cmd, &request) < 0) return -1;
 
   Empty reply;
   ClientContext context;
@@ -70,14 +70,38 @@ int ReplicaReplicaGrpcClient::ReplicaPrepareClient(int32_t v, int64_t n,
     return status.error_code();
 }
 
-int ReplicaReplicaGrpcClient::ReplicaCommitClient(const string& msg,
-                                                  const string& sig) {
-  return 0;
+int ReplicaReplicaGrpcClient::ReplicaCommitClient(int32_t v, int64_t n,
+                                                  const string& d, int32_t i) {
+  CommitCmd cmd;
+  cmd.set_v(v);
+  cmd.set_n(n);
+  cmd.set_d(d);
+  cmd.set_i(i);
+
+  SignedMessage request;
+  if (CreateSignedMessage(cmd, &request) < 0) return -1;
+
+  Empty reply;
+  ClientContext context;
+  Status status = stub_->Commit(&context, request, &reply);
+
+  if (status.ok())
+    return 0;
+  else
+    return status.error_code();
 }
-int ReplicaReplicaGrpcClient::ReplicaRelayRequestClient(const string& msg,
-                                                        const string& sig) {
-  return 0;
+int ReplicaReplicaGrpcClient::ReplicaRelayRequestClient(
+    const SignedMessage& request) {
+  Empty reply;
+  ClientContext context;
+  Status status = stub_->RelayRequest(&context, request, &reply);
+
+  if (status.ok())
+    return 0;
+  else
+    return status.error_code();
 }
+
 // TODO: checkoint might remove for storing all logs
 int ReplicaReplicaGrpcClient::ReplicaCheckpointClient(const string& msg,
                                                       const string& sig) {
@@ -85,8 +109,8 @@ int ReplicaReplicaGrpcClient::ReplicaCheckpointClient(const string& msg,
 }
 
 template <class T>
-int ReplicaReplicaGrpcClient::PrepareSignedMessage(const T& proto_cmd,
-                                                   SignedMessage* result) {
+int ReplicaReplicaGrpcClient::CreateSignedMessage(const T& proto_cmd,
+                                                  SignedMessage* result) {
   std::string serilized_cmd = proto_cmd.SerializeAsString();
   if (serilized_cmd == "") return -1;
 
