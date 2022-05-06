@@ -35,13 +35,8 @@ int ReplicaReplicaGrpcClient::ReplicaPrePrepareClient(int32_t v, int64_t n,
   cmd.set_n(n);
   cmd.set_d(Sha256Sum(m));
 
-  std::string serilized_cmd = cmd.SerializeAsString();
-  if (serilized_cmd == "") return -1;
-
   PrePrepareReq request;
-  request.mutable_preprepare()->set_message(serilized_cmd);
-  request.mutable_preprepare()->set_signature(
-      SignMessage(serilized_cmd, state_->private_key_path));
+  if (PrepareSignedMessage(cmd, request.mutable_preprepare()) < 0) return -1;
   request.set_client_message(m);
 
   Empty reply;
@@ -53,10 +48,28 @@ int ReplicaReplicaGrpcClient::ReplicaPrePrepareClient(int32_t v, int64_t n,
   else
     return status.error_code();
 }
-int ReplicaReplicaGrpcClient::ReplicaPrepareClient(const string& msg,
-                                                   const string& sig) {
-  return 0;
+
+int ReplicaReplicaGrpcClient::ReplicaPrepareClient(int32_t v, int64_t n,
+                                                   const string& d, int32_t i) {
+  PrepareCmd cmd;
+  cmd.set_v(v);
+  cmd.set_n(n);
+  cmd.set_d(d);
+  cmd.set_i(i);
+
+  SignedMessage request;
+  if (PrepareSignedMessage(cmd, &request) < 0) return -1;
+
+  Empty reply;
+  ClientContext context;
+  Status status = stub_->Prepare(&context, request, &reply);
+
+  if (status.ok())
+    return 0;
+  else
+    return status.error_code();
 }
+
 int ReplicaReplicaGrpcClient::ReplicaCommitClient(const string& msg,
                                                   const string& sig) {
   return 0;
@@ -68,5 +81,17 @@ int ReplicaReplicaGrpcClient::ReplicaRelayRequestClient(const string& msg,
 // TODO: checkoint might remove for storing all logs
 int ReplicaReplicaGrpcClient::ReplicaCheckpointClient(const string& msg,
                                                       const string& sig) {
+  return 0;
+}
+
+template <class T>
+int ReplicaReplicaGrpcClient::PrepareSignedMessage(const T& proto_cmd,
+                                                   SignedMessage* result) {
+  std::string serilized_cmd = proto_cmd.SerializeAsString();
+  if (serilized_cmd == "") return -1;
+
+  result->set_message(serilized_cmd);
+  result->set_signature(SignMessage(serilized_cmd, state_->private_key_path));
+
   return 0;
 }
