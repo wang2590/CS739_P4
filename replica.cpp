@@ -7,10 +7,10 @@
 #include <nlohmann/json.hpp>
 #include <string>
 
-#include "backup_primary_gRPC/backup_primary_grpc_server.h"
-#include "client_server_gRPC/client_server_grpc_server.h"
+#include "client_replica_gRPC/client_replica_grpc_server.h"
 #include "common.h"
-#include "primary_backup_gRPC/primary_backup_grpc_client.h"
+#include "replica_replica_gRPC/replica_replica_grpc_client.h"
+#include "replica_replica_gRPC/replica_replica_grpc_server.h"
 
 void usage(char *argv[]) { printf("usage: %s -c config_file [-h]\n", argv[0]); }
 

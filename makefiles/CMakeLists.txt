@@ -1,10 +1,16 @@
-cmake_minimum_required(VERSION 3.5.1)
+cmake_minimum_required(VERSION 3.11)
 
 project(BlockStore_PBFT C CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}" ${CMAKE_MODULE_PATH})
 include(common.cmake)
 add_compile_options(-O3)
+
+# Json
+include(FetchContent)
+FetchContent_Declare(json URL https://github.com/nlohmann/json/releases/download/v3.10.5/json.tar.xz)
+FetchContent_MakeAvailable(json)
+
 
 ## option setting:
 option(BUILD_CLIENT "Build client executable" ON)
@@ -144,6 +150,7 @@ if(BUILD_REPLICA)
     replica_replica_server
     rr_grpc_proto
     cr_grpc_proto
+    nlohmann_json::nlohmann_json
     ${_REFLECTION}
     ${_GRPC_GRPCPP}
     ${_PROTOBUF_LIBPROTOBUF})
