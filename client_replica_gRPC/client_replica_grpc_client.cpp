@@ -13,10 +13,6 @@
 
 #define TIMEOUT 10 * 1000  // unit in ms, 10 seconds
 
-using client_replica::ClientReplicaGrpc;
-using client_replica::Empty;
-using client_replica::SignedMessage;
-
 using grpc::Channel;
 using grpc::ClientContext;
 using grpc::Status;

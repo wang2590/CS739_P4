@@ -2,24 +2,18 @@ syntax = "proto3";
 
 package replica_replica;
 
+import "common.proto";
+
 service ReplicaReplicaGrpc {
-    rpc PrePrepare (PrePrepareReq) returns (Empty) {}
-    rpc Prepare (SignedMessage) returns (Empty) {}
-    rpc Commit (SignedMessage) returns (Empty) {}
-    rpc RelayRequest (SignedMessage) returns (Empty) {}
+    rpc PrePrepare (PrePrepareReq) returns (common.Empty) {}
+    rpc Prepare (common.SignedMessage) returns (common.Empty) {}
+    rpc Commit (common.SignedMessage) returns (common.Empty) {}
+    rpc RelayRequest (common.SignedMessage) returns (common.Empty) {}
     // TODO: checkoint might remove for storing all logs
-    rpc Checkpoint (SignedMessage) returns (Empty) {}
+    rpc Checkpoint (common.SignedMessage) returns (common.Empty) {}
 }
 
 message PrePrepareReq {
-    SignedMessage preprepare = 1;
+    common.SignedMessage preprepare = 1;
     bytes client_message = 2;
-}
-
-message SignedMessage {
-    bytes message = 1;
-    bytes signature = 2;
-}
-
-message Empty {
 }

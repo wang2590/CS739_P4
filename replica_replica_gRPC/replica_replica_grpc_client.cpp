@@ -20,10 +20,10 @@ using grpc::ClientContext;
 // using grpc::ClientWriter;
 using grpc::Status;
 
-using replica_replica::Empty;
+using common::Empty;
+using common::SignedMessage;
 using replica_replica::PrePrepareReq;
 using replica_replica::ReplicaReplicaGrpc;
-using replica_replica::SignedMessage;
 using namespace std;
 
 ReplicaReplicaGrpcClient::ReplicaReplicaGrpcClient(

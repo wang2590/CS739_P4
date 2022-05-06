@@ -15,10 +15,10 @@ using grpc::ServerContext;
 // using grpc::ServerReader;
 using grpc::Status;
 
-using replica_replica::Empty;
+using common::Empty;
+using common::SignedMessage;
 using replica_replica::PrePrepareReq;
 using replica_replica::ReplicaReplicaGrpc;
-using replica_replica::SignedMessage;
 
 class ReplicaReplicaGrpcServiceImpl final : public ReplicaReplicaGrpc::Service {
  public:

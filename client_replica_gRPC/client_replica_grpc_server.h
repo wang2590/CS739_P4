@@ -18,8 +18,8 @@ using grpc::ServerWriter;
 using grpc::Status;
 
 using client_replica::ClientReplicaGrpc;
-using client_replica::Empty;
-using client_replica::SignedMessage;
+using common::Empty;
+using common::SignedMessage;
 
 class ClientReplicaGrpcServiceImpl final : public ClientReplicaGrpc::Service {
  public:

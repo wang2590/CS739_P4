@@ -22,9 +22,6 @@ using grpc::ServerBuilder;
 using grpc::ServerContext;
 using grpc::Status;
 
-using client_replica::Empty;
-using client_replica::SignedMessage;
-
 using namespace std;
 
 ClientReplicaGrpcServiceImpl::ClientReplicaGrpcServiceImpl(int mount_file_fd)

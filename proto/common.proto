@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package common;
+
+message SignedMessage {
+    bytes message = 1;
+    bytes signature = 2;
+}
+
+message Empty {
+}

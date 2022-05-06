@@ -6,16 +6,15 @@ set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}" ${CMAKE_MODULE_PATH})
 include(common.cmake)
 add_compile_options(-O3)
 
-# Json
-include(FetchContent)
-FetchContent_Declare(json URL https://github.com/nlohmann/json/releases/download/v3.10.5/json.tar.xz)
-FetchContent_MakeAvailable(json)
-
-
 ## option setting:
 option(BUILD_CLIENT "Build client executable" ON)
 option(BUILD_REPLICA "Build replica executable" ON)
 option(BUILD_TEST "Build test executable" ON)
+
+# Json
+include(FetchContent)
+FetchContent_Declare(json URL https://github.com/nlohmann/json/releases/download/v3.10.5/json.tar.xz)
+FetchContent_MakeAvailable(json)
 
 # Generate Proto file
 ## client replica proto -> cr_proto
