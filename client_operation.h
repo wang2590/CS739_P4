@@ -2,7 +2,7 @@
 #define CLIENT_OPERATION_H
 #include <string>
 #include <vector>
-
+#include "consumer_queue.h"
 #include "client_replica_gRPC/client_replica_grpc_client.h"
 
 class LibClient {
@@ -12,8 +12,9 @@ class LibClient {
   void client_write(int offset, std::string buf);
 
  private:
+  consumer_queue<std::string> q;
   int quarum_num;
-  std::vector<ClientReplicaGrpc*> replicas;
+  std::vector<ClientReplicaGrpcClient*> replicas;
 };
 
 #endif
