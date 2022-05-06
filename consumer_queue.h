@@ -6,6 +6,7 @@
 template<typename T>
 class consumer_queue {
     public:
+        std::mutex lock;
         consumer_queue();
         
         bool consumer_ready() {
@@ -18,11 +19,13 @@ class consumer_queue {
         
         void do_fill(T data) {
             this->buffer.push(data);
+            ul.unlock();
         };
         
         T do_get() {
             T res = this->buffer.front();
             this->buffer.pop();
+            ul.unlock();
             return res;
         };
 
