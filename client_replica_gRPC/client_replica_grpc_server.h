@@ -7,6 +7,7 @@
 
 #include <shared_mutex>
 
+#include "../replica_state.h"
 #include "client_replica.grpc.pb.h"
 
 using namespace std;
@@ -23,14 +24,14 @@ using common::SignedMessage;
 
 class ClientReplicaGrpcServiceImpl final : public ClientReplicaGrpc::Service {
  public:
-  ClientReplicaGrpcServiceImpl(int mount_file_fd);
+  ClientReplicaGrpcServiceImpl(ReplicaState* state);
   Status Request(ServerContext* context, const SignedMessage* request,
                  Empty* reply) override;
   Status Reply(ServerContext* context, const Empty* request,
                ServerWriter<SignedMessage>* reply_writer) override;
 
  private:
-  int mount_file_fd_;
+  ReplicaState* state_;
   std::shared_mutex lock_;
 };
 

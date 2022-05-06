@@ -4,6 +4,7 @@
 #include <grpcpp/ext/proto_server_reflection_plugin.h>
 #include <grpcpp/grpcpp.h>
 
+#include "../replica_state.h"
 #include "replica_replica.grpc.pb.h"
 #include "replica_replica_grpc_client.h"
 
@@ -22,7 +23,7 @@ using replica_replica::ReplicaReplicaGrpc;
 
 class ReplicaReplicaGrpcServiceImpl final : public ReplicaReplicaGrpc::Service {
  public:
-  ReplicaReplicaGrpcServiceImpl(int mount_file_fd);
+  ReplicaReplicaGrpcServiceImpl(ReplicaState* state);
   Status PrePrepare(ServerContext* context, const PrePrepareReq* request,
                     Empty* reply) override;
   Status Prepare(ServerContext* context, const SignedMessage* request,
@@ -35,8 +36,7 @@ class ReplicaReplicaGrpcServiceImpl final : public ReplicaReplicaGrpc::Service {
                     Empty* reply) override;
 
  private:
-  int mount_file_fd_;
-  // ReplicaReplicaGrpcClient* primary_backup_client_;
+  ReplicaState* state_;
 };
 
 void RunServer(string serverAddress);

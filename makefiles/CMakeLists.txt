@@ -115,8 +115,7 @@ endif(BUILD_CLIENT)
 if(BUILD_REPLICA)
   ## generate gRPC libraries
   add_library(client_replica_server 
-    # ../lib_primary.cpp
-    # ../common.cpp
+    ../common.cpp
     ../client_replica_gRPC/client_replica_grpc_server.cpp)
   target_link_libraries(client_replica_server
     cr_grpc_proto

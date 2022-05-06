@@ -22,8 +22,9 @@ using grpc::Status;
 
 using namespace std;
 
-ReplicaReplicaGrpcServiceImpl::ReplicaReplicaGrpcServiceImpl(int mount_file_fd)
-    : mount_file_fd_(mount_file_fd) {}
+ReplicaReplicaGrpcServiceImpl::ReplicaReplicaGrpcServiceImpl(
+    ReplicaState* state)
+    : state_(state) {}
 
 Status ReplicaReplicaGrpcServiceImpl::PrePrepare(ServerContext* context,
                                                  const PrePrepareReq* request,

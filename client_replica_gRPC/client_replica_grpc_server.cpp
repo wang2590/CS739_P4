@@ -24,8 +24,8 @@ using grpc::Status;
 
 using namespace std;
 
-ClientReplicaGrpcServiceImpl::ClientReplicaGrpcServiceImpl(int mount_file_fd)
-    : mount_file_fd_(mount_file_fd) {}
+ClientReplicaGrpcServiceImpl::ClientReplicaGrpcServiceImpl(ReplicaState* state)
+    : state_(state) {}
 
 Status ClientReplicaGrpcServiceImpl::Request(ServerContext* context,
                                              const SignedMessage* request,

@@ -45,28 +45,27 @@ int main(int argc, char *argv[]) {
   const std::string priv_key_path = config["private_key_path"];
   std::string listen_addr_port = config["ip_port"];
 
+  // replica state
+  ReplicaState state;
+
   // open mount file
-  int mount_file_fd = get_mount_file();
+  state.mount_file_fd = get_mount_file();
 
   // grpc client
-  grpc::ChannelArguments args;
-  std::vector<std::unique_ptr<ReplicaReplicaGrpcClient>> replica_clients;
   for (auto &replica_conf : config["replicas"]) {
-    if (replica_clients.size() == config["replica_id"]) {
-      replica_clients.push_back(nullptr);
+    if (state.replica_clients.size() == config["replica_id"]) {
+      state.replica_clients.push_back(nullptr);
     } else {
-      auto client = std::make_unique<ReplicaReplicaGrpcClient>(
-          grpc::CreateChannel(replica_conf["ip_port"],
-                              grpc::InsecureChannelCredentials()),
-          mount_file_fd);
-      replica_clients.push_back(std::move(client));
+      auto client =
+          std::make_unique<ReplicaReplicaGrpcClient>(grpc::CreateChannel(
+              replica_conf["ip_port"], grpc::InsecureChannelCredentials()));
+      state.replica_clients.push_back(std::move(client));
     }
   }
 
   // grpc server
-  ReplicaReplicaGrpcServiceImpl service1(mount_file_fd,
-                                         primary_backup_client.get());
-  ClientReplicaGrpcServiceImpl service2(mount_file_fd);
+  ReplicaReplicaGrpcServiceImpl service1(&state);
+  ClientReplicaGrpcServiceImpl service2(&state);
   grpc::EnableDefaultHealthCheckService(true);
   grpc::reflection::InitProtoReflectionServerBuilderPlugin();
   ServerBuilder builder;
@@ -78,7 +77,7 @@ int main(int argc, char *argv[]) {
   server->Wait();
 
   // close file
-  if (close(mount_file_fd) < 0) {
+  if (close(state.mount_file_fd) < 0) {
     perror("close");
     exit(1);
   }
