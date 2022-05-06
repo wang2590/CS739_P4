@@ -147,7 +147,7 @@ if(BUILD_REPLICA)
     ${_GRPC_GRPCPP}
     ${_PROTOBUF_LIBPROTOBUF})
   add_library(replica_replica_client
-    ../replica_replica_gRPC/replica_replica_grpc_client.cpp)
+    ../replica_replica_gRPC/replica_replica_grpc_client.cpp ../lib_crypto.cpp)
   target_link_libraries(replica_replica_client
     rr_grpc_proto
     ${_REFLECTION}

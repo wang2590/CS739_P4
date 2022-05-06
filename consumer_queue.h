@@ -1,38 +1,29 @@
 #ifndef CONSUMER_QUEUE_H
 #define CONSUMER_QUEUE_H
-#include <queue>
 #include <mutex>
+#include <queue>
 
-template<typename T>
+template <typename T>
 class consumer_queue {
-    public:
-        std::mutex lock;
-        consumer_queue();
-        
-        bool consumer_ready() {
-            return this->buffer.empty();
-        };
+ public:
+  std::mutex lock;
+  consumer_queue();
 
-        bool producer_ready() {
-            return this->buffer.size() == this->max;
-        }
-        
-        void do_fill(T data) {
-            this->buffer.push(data);
-            ul.unlock();
-        };
-        
-        T do_get() {
-            T res = this->buffer.front();
-            this->buffer.pop();
-            ul.unlock();
-            return res;
-        };
+  bool consumer_ready() { return this->buffer.empty(); };
 
-    private:
-        std::queue<T> buffer;
-        int max{4};
+  bool producer_ready() { return this->buffer.size() == this->max; }
+
+  void do_fill(T data) { this->buffer.push(data); };
+
+  T do_get() {
+    T res = this->buffer.front();
+    this->buffer.pop();
+    return res;
+  };
+
+ private:
+  std::queue<T> buffer;
+  int max{4};
 };
-
 
 #endif

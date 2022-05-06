@@ -10,6 +10,7 @@
 #include <string>
 
 #include "../common.h"
+#include "../lib_crypto.h"
 #include "replica_replica.grpc.pb.h"
 
 #define TIMEOUT 10 * 1000  // unit in ms, 10 seconds
@@ -20,67 +21,101 @@ using grpc::ClientContext;
 // using grpc::ClientWriter;
 using grpc::Status;
 
-using common::Empty;
-using common::SignedMessage;
-using replica_replica::PrePrepareReq;
-using replica_replica::ReplicaReplicaGrpc;
-using namespace std;
+using namespace common;
+using namespace replica_replica;
 
 ReplicaReplicaGrpcClient::ReplicaReplicaGrpcClient(
-    std::shared_ptr<Channel> channel)
-    : stub_(ReplicaReplicaGrpc::NewStub(channel)) {}
+    std::shared_ptr<Channel> channel, ReplicaState* state)
+    : stub_(ReplicaReplicaGrpc::NewStub(channel)), state_(state) {}
 
-int ReplicaReplicaGrpcClient::ReplicaPrePrepareClient(
-    const string& msg, const string& sig, const string& client_msg) {
-  return 0;
-  // RestoreDataReq request;
-  // RestoreDataReply reply;
-  // ClientContext context;
-  // std::chrono::time_point deadline =
-  //     std::chrono::system_clock::now() + std::chrono::milliseconds(TIMEOUT);
-  // context.set_deadline(deadline);
-  // unique_ptr<ClientWriter<RestoreDataReq>> writer(
-  //     stub_->RestoreData(&context, &reply));
-  // for (int i : offset_v) {
-  //   std::string buf = read(i);
-  //   request.set_buf(buf);
-  //   request.set_offset(i);
-  //   if (!writer->Write(request)) {
-  //     // Broken stream.
-  //     break;
-  //   }
-  //   // crash testing code
-  //   if (buf.find("crash_replica_replica_grpc_client_restore_data") !=
-  //       string::npos) {
-  //     cout << "Killing client process in write()\n";
-  //     kill(getpid(), SIGABRT);
-  //   }
-  // }
+int ReplicaReplicaGrpcClient::ReplicaPrePrepareClient(int32_t v, int64_t n,
+                                                      const string& m) {
+  PrePrepareCmd cmd;
+  cmd.set_v(v);
+  cmd.set_n(n);
+  cmd.set_d(Sha256Sum(m));
 
-  // writer->WritesDone();
-  // Status status = writer->Finish();
+  PrePrepareReq request;
+  if (CreateSignedMessage(cmd, request.mutable_preprepare()) < 0) return -1;
+  request.set_client_message(m);
 
-  // if (status.ok()) {
-  //   return reply.err();
-  // }
-  // cout << "There was an error in the server Write " << status.error_code()
-  //      << endl;
-  // return status.error_code();
+  Empty reply;
+  ClientContext context;
+  Status status = stub_->PrePrepare(&context, request, &reply);
+
+  if (status.ok())
+    return 0;
+  else
+    return status.error_code();
 }
-int ReplicaReplicaGrpcClient::ReplicaPrepareClient(const string& msg,
-                                                   const string& sig) {
-  return 0;
+
+int ReplicaReplicaGrpcClient::ReplicaPrepareClient(int32_t v, int64_t n,
+                                                   const string& d, int32_t i) {
+  PrepareCmd cmd;
+  cmd.set_v(v);
+  cmd.set_n(n);
+  cmd.set_d(d);
+  cmd.set_i(i);
+
+  SignedMessage request;
+  if (CreateSignedMessage(cmd, &request) < 0) return -1;
+
+  Empty reply;
+  ClientContext context;
+  Status status = stub_->Prepare(&context, request, &reply);
+
+  if (status.ok())
+    return 0;
+  else
+    return status.error_code();
 }
-int ReplicaReplicaGrpcClient::ReplicaCommitClient(const string& msg,
-                                                  const string& sig) {
-  return 0;
+
+int ReplicaReplicaGrpcClient::ReplicaCommitClient(int32_t v, int64_t n,
+                                                  const string& d, int32_t i) {
+  CommitCmd cmd;
+  cmd.set_v(v);
+  cmd.set_n(n);
+  cmd.set_d(d);
+  cmd.set_i(i);
+
+  SignedMessage request;
+  if (CreateSignedMessage(cmd, &request) < 0) return -1;
+
+  Empty reply;
+  ClientContext context;
+  Status status = stub_->Commit(&context, request, &reply);
+
+  if (status.ok())
+    return 0;
+  else
+    return status.error_code();
 }
-int ReplicaReplicaGrpcClient::ReplicaRelayRequestClient(const string& msg,
-                                                        const string& sig) {
-  return 0;
+int ReplicaReplicaGrpcClient::ReplicaRelayRequestClient(
+    const SignedMessage& request) {
+  Empty reply;
+  ClientContext context;
+  Status status = stub_->RelayRequest(&context, request, &reply);
+
+  if (status.ok())
+    return 0;
+  else
+    return status.error_code();
 }
+
 // TODO: checkoint might remove for storing all logs
 int ReplicaReplicaGrpcClient::ReplicaCheckpointClient(const string& msg,
                                                       const string& sig) {
+  return 0;
+}
+
+template <class T>
+int ReplicaReplicaGrpcClient::CreateSignedMessage(const T& proto_cmd,
+                                                  SignedMessage* result) {
+  std::string serilized_cmd = proto_cmd.SerializeAsString();
+  if (serilized_cmd == "") return -1;
+
+  result->set_message(serilized_cmd);
+  result->set_signature(SignMessage(serilized_cmd, state_->private_key_path));
+
   return 0;
 }

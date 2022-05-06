@@ -42,11 +42,14 @@ int main(int argc, char *argv[]) {
   std::ifstream config_file_stream(config_file);
   json config = json::parse(config_file_stream);
 
-  const std::string priv_key_path = config["private_key_path"];
   std::string listen_addr_port = config["ip_port"];
 
   // replica state
   ReplicaState state;
+  state.private_key_path = config["private_key_path"];
+  for (auto &replica_conf : config["replicas"]) {
+    state.replicas_public_key_paths.push_back(replica_conf["public_key_path"]);
+  }
 
   // open mount file
   state.mount_file_fd = get_mount_file();
@@ -56,9 +59,10 @@ int main(int argc, char *argv[]) {
     if (state.replica_clients.size() == config["replica_id"]) {
       state.replica_clients.push_back(nullptr);
     } else {
-      auto client =
-          std::make_unique<ReplicaReplicaGrpcClient>(grpc::CreateChannel(
-              replica_conf["ip_port"], grpc::InsecureChannelCredentials()));
+      auto client = std::make_unique<ReplicaReplicaGrpcClient>(
+          grpc::CreateChannel(replica_conf["ip_port"],
+                              grpc::InsecureChannelCredentials()),
+          &state);
       state.replica_clients.push_back(std::move(client));
     }
   }

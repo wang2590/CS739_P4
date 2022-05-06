@@ -12,3 +12,41 @@ service ClientReplicaGrpc {
 message ReplyReq {
     bytes  client_id = 1; // client public key as client id
 }
+
+// GRPC unrelated messages
+
+message RequestCmd {
+    OperationCmd o = 1;
+    int64 t = 2;
+    int64 c = 3;
+}
+
+message OperationCmd {
+    oneof operation {
+        ReadRequestCmd read = 1;
+        WriteRequestCmd write = 2;
+        RecoveryRequestCmd recovery = 3;
+    }
+}
+
+message ReadRequestCmd {
+    int32 offset = 1;
+}
+
+message WriteRequestCmd {
+    int32 offset = 1;
+    bytes data = 2;
+}
+
+message RecoveryRequestCmd {
+    int32 offset = 1;
+    bytes data = 2;
+}
+
+message ReplyCmd {
+    int32 v = 1;
+    int64 t = 2;
+    int64 c = 3;
+    int32 i = 4;
+    bytes r = 5;
+}
