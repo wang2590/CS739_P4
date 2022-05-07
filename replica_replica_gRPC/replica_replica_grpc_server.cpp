@@ -36,42 +36,60 @@ Status ReplicaReplicaGrpcServiceImpl::PrePrepare(ServerContext* context,
     return Status(StatusCode::PERMISSION_DENIED,
                   "Only the primary can send pre-prepare.");
   } else {
-    {
-      std::lock_guard<std::mutex> lock(operation_history_lock_);
+    const SignedMessage& preprepare = request->preprepare();
+    const SignedMessage& client_message = request->client_message();
 
-      const SignedMessage& preprepare = request->preprepare();
-      const SignedMessage& client_message = request->client_message();
+    // ==== Verify the authenticity of pre-prepare message ====
 
-      PrePrepareCmd preprepare_cmd;
-      if (!VerifyAndDecodeMessage(
-              preprepare, state_->replicas_public_keys[state_->primary].get(),
-              &preprepare_cmd)) {
-        // This pre-prepare is not signed properly by the primary
-        return Status(StatusCode::PERMISSION_DENIED,
-                      "Only the primary can send pre-prepare.");
-      }
-
-      RequestCmd client_cmd;
-      client_cmd.ParseFromString(client_message.message());
-      RsaPtr rsa = CreateRsa(client_cmd.c(), true);
-      if (!VerifyMessage(client_message.message(), client_message.signature(),
-                         rsa.get())) {
-        goto faulty_primary;
-      }
-
-      if (preprepare_cmd.d() == Sha256Sum(client_message.message())) {
-        goto faulty_primary;
-      }
-
-      // request.message()
-      // operation_history_.push_back()
-
-      request->preprepare();
+    PrePrepareCmd preprepare_cmd;
+    if (!VerifyAndDecodeMessage(
+            preprepare, state_->replicas_public_keys[state_->primary].get(),
+            &preprepare_cmd)) {
+      // This pre-prepare is not signed properly by the primary
+      return Status(StatusCode::PERMISSION_DENIED,
+                    "Only the primary can send pre-prepare.");
     }
-  faulty_primary:;
+
+    RequestCmd client_cmd;
+    client_cmd.ParseFromString(client_message.message());
+    RsaPtr rsa = CreateRsa(client_cmd.c(), true);
+    if (!VerifyMessage(client_message.message(), client_message.signature(),
+                       rsa.get())) {
+      goto faulty_primary;
+    }
+
+    if (preprepare_cmd.d() == Sha256Sum(client_message.message())) {
+      goto faulty_primary;
+    }
+
+    if (preprepare_cmd.v() != state_->view) {
+      goto faulty_primary;
+    }
+
+    // ==== Check n and add the request to history ====
+    {
+      const std::lock_guard<std::mutex> lock(operation_history_lock_);
+      if (preprepare_cmd.n() != operation_history_.size()) {
+        goto faulty_primary;
+      }
+      operation_history_.push_back(client_cmd);
+    }
+
+    // ==== Send prepare message ====
+
+    for (const auto& replica_client : state_->replica_clients) {
+      replica_client->ReplicaPrepareClient(
+          preprepare_cmd.v(), preprepare_cmd.n(), preprepare_cmd.d(),
+          state_->replica_id);
+    }
+  faulty_primary:
+    // TODO: view change
+    return Status(StatusCode::PERMISSION_DENIED,
+                  "Only the primary can send pre-prepare.");
+    return Status::OK;
   }
-  return Status::OK;
 }
+
 Status ReplicaReplicaGrpcServiceImpl::Prepare(ServerContext* context,
                                               const SignedMessage* request,
                                               Empty* reply) {

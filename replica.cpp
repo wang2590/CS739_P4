@@ -69,6 +69,10 @@ int main(int argc, char *argv[]) {
     }
   }
 
+  // setup default state
+  state.primary = 0;
+  state.view = 0;
+
   // grpc server
   ReplicaReplicaGrpcServiceImpl service1(&state);
   ClientReplicaGrpcServiceImpl service2(&state);

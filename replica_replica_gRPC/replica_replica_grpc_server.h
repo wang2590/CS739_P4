@@ -39,7 +39,7 @@ class ReplicaReplicaGrpcServiceImpl final : public ReplicaReplicaGrpc::Service {
  private:
   ReplicaState* state_;
 
-  std::vector<client_replica::RequestCmd> operation_history;
+  std::vector<client_replica::RequestCmd> operation_history_;
   std::mutex operation_history_lock_;
 };
 
