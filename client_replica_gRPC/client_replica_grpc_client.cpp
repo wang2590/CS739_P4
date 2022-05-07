@@ -19,6 +19,7 @@ using common::Empty;
 using common::SignedMessage;
 using grpc::Channel;
 using grpc::ClientContext;
+using grpc::ClientReader;
 using grpc::Status;
 
 using namespace std;
@@ -37,13 +38,6 @@ int ClientReplicaGrpcClient::clientRequest(const string& msg,
   ClientContext context;
   Status status = stub_->Request(&context, request, &reply);
 
-  // // testing code
-  // if (reply.buf().find("crash_client_server_grpc_client_read") !=
-  //     string::npos) {
-  //   cout << "Killing client process in read()\n";
-  //   kill(getpid(), SIGABRT);
-  // }
-
   if (status.ok()) {
     return 0;
   }
@@ -56,16 +50,12 @@ int ClientReplicaGrpcClient::clientReply(const string& clientPubKey) {
   request.set_client_id(clientPubKey);
   SignedMessage reply;
   ClientContext context;
-  Status status = stub_->Reply(&context, request, &reply);
-
-  // // testing code
-  // if (reply.buf().find("crash_client_server_grpc_client_read") !=
-  //     string::npos) {
-  //   cout << "Killing client process in read()\n";
-  //   kill(getpid(), SIGABRT);
-  // }
-  buf.append(reply.buf());
-
+  unique_ptr<ClientReader<SignedMessage>> reader(
+      stub_->Reply(&context, request));
+  while (reader->Read(&reply)) {
+    // buf.append(reply.buf());
+  }
+  Status status = reader->Finish();
   if (status.ok()) {
     return 0;
   }
