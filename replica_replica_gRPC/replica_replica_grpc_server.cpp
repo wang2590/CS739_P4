@@ -19,8 +19,10 @@ using grpc::Server;
 using grpc::ServerBuilder;
 using grpc::ServerContext;
 using grpc::Status;
+using grpc::StatusCode;
 
 using namespace client_replica;
+using namespace replica_replica;
 
 ReplicaReplicaGrpcServiceImpl::ReplicaReplicaGrpcServiceImpl(
     ReplicaState* state)
@@ -30,7 +32,9 @@ Status ReplicaReplicaGrpcServiceImpl::PrePrepare(ServerContext* context,
                                                  const PrePrepareReq* request,
                                                  Empty* reply) {
   if (state_->replica_id == state_->primary) {
-    // TODO:
+    // The primary itself should not receive such message. Ignore it.
+    return Status(StatusCode::PERMISSION_DENIED,
+                  "Only the primary can send pre-prepare.");
   } else {
     {
       std::lock_guard<std::mutex> lock(operation_history_lock_);
@@ -38,12 +42,13 @@ Status ReplicaReplicaGrpcServiceImpl::PrePrepare(ServerContext* context,
       const SignedMessage& preprepare = request->preprepare();
       const SignedMessage& client_message = request->client_message();
 
-      PrePrepareReq preprepare_req;
-      if (!VerifyAndDecodeMessage(preprepare,
-                                  state_->replicas_public_keys[state_->primary],
-                                  &preprepare_req)) {
+      PrePrepareCmd preprepare_cmd;
+      if (!VerifyAndDecodeMessage(
+              preprepare, state_->replicas_public_keys[state_->primary].get(),
+              &preprepare_cmd)) {
         // This pre-prepare is not signed properly by the primary
-        return Status::OK();
+        return Status(StatusCode::PERMISSION_DENIED,
+                      "Only the primary can send pre-prepare.");
       }
 
       RequestCmd client_cmd;
@@ -54,7 +59,7 @@ Status ReplicaReplicaGrpcServiceImpl::PrePrepare(ServerContext* context,
         goto faulty_primary;
       }
 
-      if (preprepare_req.d() == Sha256Sum(client_message.message())) {
+      if (preprepare_cmd.d() == Sha256Sum(client_message.message())) {
         goto faulty_primary;
       }
 

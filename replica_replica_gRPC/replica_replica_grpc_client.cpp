@@ -37,7 +37,9 @@ int ReplicaReplicaGrpcClient::ReplicaPrePrepareClient(int32_t v, int64_t n,
 
   PrePrepareReq request;
   if (CreateSignedMessage(cmd, request.mutable_preprepare()) < 0) return -1;
-  request.set_client_message(m);
+  request.mutable_client_message()->set_message(m);
+  request.mutable_client_message()->set_signature(
+      SignMessage(m, state_->private_key.get()));
 
   Empty reply;
   ClientContext context;
