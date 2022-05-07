@@ -32,37 +32,27 @@ ClientReplicaGrpcServiceImpl::ClientReplicaGrpcServiceImpl(ReplicaState* state)
 Status ClientReplicaGrpcServiceImpl::Request(ServerContext* context,
                                              const SignedMessage* request,
                                              Empty* reply) {
+  const string msg = request->message();
+  const string sig = request->signature();
+  // TODO: replica consume client message and signature
+  // reply Empty -> nothing
   return Status::OK;
-  // std::shared_lock<std::shared_mutex> read_lock(lock_);
-
-  // string buf;
-  // bool succ = lib_primary_->Read(request->offset(), buf);
-
-  // // testing code
-  // if (buf.find("crash_grpc_server_read") != string::npos) {
-  //   // cout << "Killing server process in read\n";
-  //   kill(getpid(), SIGINT);
-  // }
-
-  // reply->set_buf(buf);
-  // reply->set_err(!succ);
-
-  // return Status::OK;
 }
+
 Status ClientReplicaGrpcServiceImpl::Reply(
     ServerContext* context, const ReplyReq* request,
     ServerWriter<SignedMessage>* reply_writer) {
+  int numOfBytes = 0;
+  struct timespec spec;
+
+  SignedMessage* reply = new SignedMessage();
+  // TODO: set message and signature
+  // reply->set_message();
+  // reply->set_signature();
+
+  // TODO: add comsumer
+  while (1) {
+    reply_writer->Write(*reply);
+  }
   return Status::OK;
-  // std::unique_lock<std::shared_mutex> write_lock(lock_);
-
-  // // testing code
-  // if (request->buf().find("crash_grpc_server_write") != string::npos) {
-  //   // cout << "Killing server process in write()\n";
-  //   kill(getpid(), SIGINT);
-  // }
-
-  // bool succ = lib_primary_->Write(request->offset(), request->buf());
-  // reply->set_err(!succ);
-
-  // return Status::OK;
 }

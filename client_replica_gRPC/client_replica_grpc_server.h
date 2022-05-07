@@ -5,8 +5,6 @@
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/health_check_service_interface.h>
 
-#include <shared_mutex>
-
 #include "../replica_state.h"
 #include "client_replica.grpc.pb.h"
 
@@ -32,7 +30,6 @@ class ClientReplicaGrpcServiceImpl final : public ClientReplicaGrpc::Service {
 
  private:
   ReplicaState* state_;
-  std::shared_mutex lock_;
 };
 
 void RunServer(string serverAddress);

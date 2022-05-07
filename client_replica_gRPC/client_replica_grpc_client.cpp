@@ -8,6 +8,7 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include <utility>
 
 #include "client_replica.grpc.pb.h"
 
@@ -53,7 +54,7 @@ int ClientReplicaGrpcClient::clientReply(const string& clientPubKey) {
   unique_ptr<ClientReader<SignedMessage>> reader(
       stub_->Reply(&context, request));
   while (reader->Read(&reply)) {
-    state_->q->do_fill(make_pair(reply->message, reply->signature));
+    state_->q->do_fill(make_pair(reply.message(), reply.signature()));
   }
   Status status = reader->Finish();
   if (status.ok()) {
