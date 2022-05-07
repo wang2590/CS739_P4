@@ -15,7 +15,7 @@ service ReplicaReplicaGrpc {
 
 message PrePrepareReq {
     common.SignedMessage preprepare = 1;
-    bytes client_message = 2;
+    common.SignedMessage client_message = 2;
 }
 
 

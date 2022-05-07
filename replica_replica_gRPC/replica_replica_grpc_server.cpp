@@ -30,22 +30,40 @@ Status ReplicaReplicaGrpcServiceImpl::PrePrepare(ServerContext* context,
                                                  const PrePrepareReq* request,
                                                  Empty* reply) {
   if (state_->replica_id == state_->primary) {
-    std::lock_guard<std::mutex> lock(operation_history_lock_);
-
-    RequestCmd cmd;
-    if (!cmd.ParseFromString(request->preprepare().message())) {
-      goto faulty_client;
-    }
-
-    // VerifyMessage(request.message(), request.signature(), )
-
-    // request.message()
-    // operation_history_.push_back()
-
-    request->preprepare();
-  faulty_client:;
+    // TODO:
   } else {
-    // forward the message to primary
+    {
+      std::lock_guard<std::mutex> lock(operation_history_lock_);
+
+      const SignedMessage& preprepare = request->preprepare();
+      const SignedMessage& client_message = request->client_message();
+
+      PrePrepareReq preprepare_req;
+      if (!VerifyAndDecodeMessage(preprepare,
+                                  state_->replicas_public_keys[state_->primary],
+                                  &preprepare_req)) {
+        // This pre-prepare is not signed properly by the primary
+        return Status::OK();
+      }
+
+      RequestCmd client_cmd;
+      client_cmd.ParseFromString(client_message.message());
+      RsaPtr rsa = CreateRsa(client_cmd.c(), true);
+      if (!VerifyMessage(client_message.message(), client_message.signature(),
+                         rsa.get())) {
+        goto faulty_primary;
+      }
+
+      if (preprepare_req.d() == Sha256Sum(client_message.message())) {
+        goto faulty_primary;
+      }
+
+      // request.message()
+      // operation_history_.push_back()
+
+      request->preprepare();
+    }
+  faulty_primary:;
   }
   return Status::OK;
 }
