@@ -20,7 +20,7 @@ using grpc::ServerBuilder;
 using grpc::ServerContext;
 using grpc::Status;
 
-using namespace std;
+using namespace client_replica;
 
 ReplicaReplicaGrpcServiceImpl::ReplicaReplicaGrpcServiceImpl(
     ReplicaState* state)
@@ -29,6 +29,24 @@ ReplicaReplicaGrpcServiceImpl::ReplicaReplicaGrpcServiceImpl(
 Status ReplicaReplicaGrpcServiceImpl::PrePrepare(ServerContext* context,
                                                  const PrePrepareReq* request,
                                                  Empty* reply) {
+  if (state_->replica_id == state_->primary) {
+    std::lock_guard<std::mutex> lock(operation_history_lock_);
+
+    RequestCmd cmd;
+    if (!cmd.ParseFromString(request->preprepare().message())) {
+      goto faulty_client;
+    }
+
+    // VerifyMessage(request.message(), request.signature(), )
+
+    // request.message()
+    // operation_history_.push_back()
+
+    request->preprepare();
+  faulty_client:;
+  } else {
+    // forward the message to primary
+  }
   return Status::OK;
 }
 Status ReplicaReplicaGrpcServiceImpl::Prepare(ServerContext* context,

@@ -4,11 +4,12 @@
 #include <grpcpp/ext/proto_server_reflection_plugin.h>
 #include <grpcpp/grpcpp.h>
 
+#include <mutex>
+
 #include "../replica_state.h"
+#include "client_replica.grpc.pb.h"
 #include "replica_replica.grpc.pb.h"
 #include "replica_replica_grpc_client.h"
-
-using namespace std;
 
 using grpc::Server;
 using grpc::ServerBuilder;
@@ -37,6 +38,9 @@ class ReplicaReplicaGrpcServiceImpl final : public ReplicaReplicaGrpc::Service {
 
  private:
   ReplicaState* state_;
+
+  std::vector<client_replica::RequestCmd> operation_history;
+  std::mutex operation_history_lock_;
 };
 
 void RunServer(string serverAddress);

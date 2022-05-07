@@ -15,7 +15,7 @@ service ClientReplicaGrpc {
 message RequestCmd {
     OperationCmd o = 1;
     int64 t = 2;
-    int64 c = 3;
+    bytes c = 3;
 }
 
 message OperationCmd {
@@ -43,7 +43,7 @@ message RecoveryRequestCmd {
 message ReplyCmd {
     int32 v = 1;
     int64 t = 2;
-    int64 c = 3;
+    bytes c = 3;
     int32 i = 4;
     bytes r = 5;
 }
