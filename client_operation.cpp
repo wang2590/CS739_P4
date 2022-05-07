@@ -3,7 +3,7 @@
 #include <chrono>
 #include <iomanip>
 #include <sstream>
-
+#include <unordered_map>
 #include "common.h"
 #include "lib_crypto.h"
 // #include "consumer_queue.h"
@@ -70,7 +70,7 @@ void LibClient::client_write(int offset, std::string buf) {
     if (ret != 0) {
       return;
     }
-    
+
     // TODO: Check the message's timestamp
     
     // Timestamp match >> add to hashTable, else discard
