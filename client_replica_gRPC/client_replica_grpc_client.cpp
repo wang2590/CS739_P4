@@ -25,8 +25,8 @@ using grpc::Status;
 using namespace std;
 
 ClientReplicaGrpcClient::ClientReplicaGrpcClient(
-    std::shared_ptr<Channel> channel)
-    : stub_(ClientReplicaGrpc::NewStub(channel)) {}
+    std::shared_ptr<Channel> channel, ClientState* state)
+    : stub_(ClientReplicaGrpc::NewStub(channel)), state_(state) {}
 
 int ClientReplicaGrpcClient::clientRequest(const string& msg,
                                            const string& sig) {
@@ -53,7 +53,7 @@ int ClientReplicaGrpcClient::clientReply(const string& clientPubKey) {
   unique_ptr<ClientReader<SignedMessage>> reader(
       stub_->Reply(&context, request));
   while (reader->Read(&reply)) {
-    // buf.append(reply.buf());
+    state_->q->do_fill(make_pair(reply->message, reply->signature));
   }
   Status status = reader->Finish();
   if (status.ok()) {

@@ -3,6 +3,8 @@
 
 #include <grpcpp/grpcpp.h>
 
+#include "../client_state.h"
+#include "../consumer_queue.h"
 #include "client_replica.grpc.pb.h"
 
 using namespace std;
