@@ -46,9 +46,11 @@ int main(int argc, char *argv[]) {
 
   // replica state
   ReplicaState state;
-  state.private_key_path = config["private_key_path"];
+  state.replica_id = config["replica_id"];
+  state.private_key = CreateRsaWithFilename(config["private_key_path"], false);
   for (auto &replica_conf : config["replicas"]) {
-    state.replicas_public_key_paths.push_back(replica_conf["public_key_path"]);
+    state.replicas_public_keys.push_back(
+        CreateRsaWithFilename(replica_conf["public_key_path"], true));
   }
 
   // open mount file

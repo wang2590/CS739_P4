@@ -90,6 +90,7 @@ int ReplicaReplicaGrpcClient::ReplicaCommitClient(int32_t v, int64_t n,
   else
     return status.error_code();
 }
+
 int ReplicaReplicaGrpcClient::ReplicaRelayRequestClient(
     const SignedMessage& request) {
   Empty reply;
@@ -115,7 +116,7 @@ int ReplicaReplicaGrpcClient::CreateSignedMessage(const T& proto_cmd,
   if (serilized_cmd == "") return -1;
 
   result->set_message(serilized_cmd);
-  result->set_signature(SignMessage(serilized_cmd, state_->private_key_path));
+  result->set_signature(SignMessage(serilized_cmd, state_->private_key.get()));
 
   return 0;
 }
