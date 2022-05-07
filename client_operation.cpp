@@ -10,11 +10,12 @@
 int time_out = 100000;
 
 LibClient::LibClient(std::vector<std::string> ip_ports) {
+  state_.q = std::make_unique<consumer_queue>();
   grpc::ChannelArguments ch_args;
   quarum_num = (ip_ports.size() - 1) / 3 * 2;
   for (std::string& ip_port : ip_ports) {
-    replicas.push_back(new ClientReplicaGrpcClient(grpc::CreateCustomChannel(
-        ip_port, grpc::InsecureChannelCredentials(), ch_args)));
+    replicas.push_back(std::make_unique<ClientReplicaGrpcClient>(grpc::CreateCustomChannel(
+        ip_port, grpc::InsecureChannelCredentials(), ch_args), &state_));
   }
 }
 
@@ -31,29 +32,9 @@ void LibClient::client_read(int offset) {
   auto start_time = std::chrono::high_resolution_clock::now();
   // consumer
   while (ret.size() < this->quarum_num) {
-    while (q.consumer_ready()) {
-      // Check timeout
-      auto end_time = std::chrono::high_resolution_clock::now();
-      if (std::chrono::duration_cast<std::chrono::microseconds>(end_time -
-                                                                start_time)
-              .count() >= time_out) {
-        std::cout << "Timeout: Read Failed!\n";
-        return;
-      }
-    }
 
-    // Check time out
-    auto end_time = std::chrono::high_resolution_clock::now();
-    if (std::chrono::duration_cast<std::chrono::microseconds>(end_time -
-                                                              start_time)
-            .count() >= time_out) {
-      std::cout << "Timeout: Read Failed!\n";
-      return;
-    }
-
-    std::unique_lock<std::mutex> ul(q.lock);
-    std::string ret_res = q.do_get();
-    ul.unlock();
+    std::pair<std::string, std::string> res;
+    state_.q->do_get(res, start_time);
 
     // TODO: Check the ret_res's timestamp
   }
