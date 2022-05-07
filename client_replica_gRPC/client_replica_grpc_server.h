@@ -19,15 +19,15 @@ using grpc::ServerWriter;
 using grpc::Status;
 
 using client_replica::ClientReplicaGrpc;
+using client_replica::ReplyReq;
 using common::Empty;
 using common::SignedMessage;
-
 class ClientReplicaGrpcServiceImpl final : public ClientReplicaGrpc::Service {
  public:
   ClientReplicaGrpcServiceImpl(ReplicaState* state);
   Status Request(ServerContext* context, const SignedMessage* request,
                  Empty* reply) override;
-  Status Reply(ServerContext* context, const Empty* request,
+  Status Reply(ServerContext* context, const ReplyReq* request,
                ServerWriter<SignedMessage>* reply_writer) override;
 
  private:

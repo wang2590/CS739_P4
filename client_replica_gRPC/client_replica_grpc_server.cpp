@@ -17,6 +17,8 @@ static const string MOUNTPATH = "/p4_block";
 
 #include "client_replica.grpc.pb.h"
 
+using client_replica::ReplyReq;
+using common::Empty;
 using grpc::Server;
 using grpc::ServerBuilder;
 using grpc::ServerContext;
@@ -48,7 +50,7 @@ Status ClientReplicaGrpcServiceImpl::Request(ServerContext* context,
   // return Status::OK;
 }
 Status ClientReplicaGrpcServiceImpl::Reply(
-    ServerContext* context, const Empty* request,
+    ServerContext* context, const ReplyReq* request,
     ServerWriter<SignedMessage>* reply_writer) {
   return Status::OK;
   // std::unique_lock<std::shared_mutex> write_lock(lock_);
