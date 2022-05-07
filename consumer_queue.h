@@ -8,7 +8,7 @@ class consumer_queue {
  public:
   consumer_queue();
 
-  void do_fill(auto start_time, T data) { 
+  int do_fill(auto start_time, std::pair<T, T> data) { 
 		std::unique_lock<std::mutex> ul(lock);
 		while (buffer.size() == max) {
 			auto end_time = std::chrono::high_resolution_clock::now();
@@ -16,7 +16,7 @@ class consumer_queue {
                                                                 start_time)
               .count() >= time_out) {
         std::cout << "Timeout: Read Failed!\n";
-        return;
+        return -1;
       }
 			std::this_thread::sleep_for (std::chrono::microseconds(1));
 		}
@@ -25,20 +25,21 @@ class consumer_queue {
 																															start_time)
 						.count() >= time_out) {
 			std::cout << "Timeout: Read Failed!\n";
-			return;
+			return -1;
 		}
 		this->buffer.push(data); 
 		ul.unlock();
+		return 0;
 	};
 
-  void do_get(auto start_time, std::pari<T, T>& res) {
+  int do_get(auto start_time, std::pari<T, T>& res) {
 		while (this->buffer.empty()) {
 			auto end_time = std::chrono::high_resolution_clock::now();
       if (std::chrono::duration_cast<std::chrono::microseconds>(end_time -
                                                                 start_time)
               .count() >= time_out) {
         std::cout << "Timeout: Read Failed!\n";
-        return;
+        return -1;
       }
 			std::this_thread::sleep_for (std::chrono::microseconds(1));
 		}
@@ -48,14 +49,14 @@ class consumer_queue {
                                                               start_time)
             .count() >= time_out) {
       std::cout << "Timeout: Read Failed!\n";
-      return;
+      return -1;
     }
     
 		std::unique_lock<std::mutex> ul(q.lock);
     res = this->buffer.front();
     this->buffer.pop();
 		ul.unlock();
-    return res;
+    return 0;
   };
 
  private:

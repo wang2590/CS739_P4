@@ -34,8 +34,11 @@ void LibClient::client_read(int offset) {
   while (ret.size() < this->quarum_num) {
 
     std::pair<std::string, std::string> res;
-    state_.q->do_get(res, start_time);
-
+    int ret = state_.q->do_get(res, start_time);
+    if (ret != 0) {
+      return;
+    }
+      
     // TODO: Check the ret_res's timestamp
   }
 
@@ -56,28 +59,12 @@ void LibClient::client_write(int offset, std::string buf) {
 
   // consumer
   while (counter < this->quarum_num) {
-    while (q.consumer_ready()) {
-      auto end_time = std::chrono::high_resolution_clock::now();
-      if (std::chrono::duration_cast<std::chrono::microseconds>(end_time -
-                                                                start_time)
-              .count() > time_out) {
-        std::cout << "Timeout: Write Failed!\n";
-        return;
-      }
-    }
-
-    auto end_time = std::chrono::high_resolution_clock::now();
-    if (std::chrono::duration_cast<std::chrono::microseconds>(end_time -
-                                                              start_time)
-            .count() > time_out) {
-      std::cout << "Timeout: Write Failed!\n";
+    
+    std::pair<std::string, std::string> res;
+    int ret = state_.q->do_get(res, start_time);
+    if (ret != 0) {
       return;
     }
-
-    std::unique_lock<std::mutex> ul(q.lock);
-    std::string ret_res = q.do_get();
-    ul.unlock();
-
     counter++;
   }
   std::cout << "Write Success!\n";
