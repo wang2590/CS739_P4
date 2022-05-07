@@ -22,7 +22,7 @@ LibClient::LibClient(std::vector<std::string> ip_ports) {
 void LibClient::client_read(int offset) {
   std::string dumb1 = "sdsd";
   std::string dumb2 = "sdsd";
-  std::unordered_map<std::string, int> results; // message -> count
+  std::unordered_map<std::string, int> hashTable; // message -> count
   auto timestamp = std::chrono::high_resolution_clock::now();
 
   // TODO:Signed the data
@@ -31,7 +31,7 @@ void LibClient::client_read(int offset) {
 
   auto start_time = std::chrono::high_resolution_clock::now();
   // consumer
-  while (results.size() < 2 * this->quarum_num + 1) {
+  while (hashTable.size() < 2 * this->quarum_num + 1) {
     std::pair<std::string, std::string> result;
     int ret = state_.q->do_get(start_time, result);
     if (ret != 0) {
@@ -40,11 +40,9 @@ void LibClient::client_read(int offset) {
 
     // TODO: Check the message's timestamp
     
+    // Timestamp match >> add to hashTable, else discard
 
-
-    // Timestamp match >> add to results, else discard
-
-    // if count is over quarum_num break
+    // if count is over quarum_num, break
     
   
   }
@@ -58,24 +56,26 @@ void LibClient::client_read(int offset) {
 void LibClient::client_write(int offset, std::string buf) {
   auto timestamp = std::chrono::high_resolution_clock::now();
   std::string dumb = "";
-  std::set<int> s;
+  std::unordered_map<int, int> hashTable; // replica num -> counter
   // TODO: Signed the data
 
 
   int res = this->replicas[0]->clientRequest(dumb, buf);
-  int counter = 0;
   auto start_time = std::chrono::high_resolution_clock::now();
 
   // consumer
-  while (s.size() <= this->quarum_num) {
+  while (hashTable.size() < 2 * this->quarum_num + 1) {
     std::pair<std::string, std::string> result;
     int ret = state_.q->do_get(start_time, result);
     if (ret != 0) {
       return;
     }
-    // Check the timestamp
+    
+    // TODO: Check the message's timestamp
+    
+    // Timestamp match >> add to hashTable, else discard
 
-
+    // if count is over quarum_num, break
     
   }
   std::cout << "Write Success!\n";
