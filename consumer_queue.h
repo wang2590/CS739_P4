@@ -2,6 +2,7 @@
 #define CONSUMER_QUEUE_H
 #include <mutex>
 #include <queue>
+#include <thread>
 
 template <typename T>
 class consumer_queue {
@@ -31,7 +32,7 @@ class consumer_queue {
       return -1;
     }
 
-    std::unique_lock<std::mutex> ul(q.lock);
+    std::unique_lock<std::mutex> ul(lock);
     res = this->buffer.front();
     this->buffer.pop();
     ul.unlock();
