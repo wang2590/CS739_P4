@@ -3,6 +3,8 @@
 
 #include <grpcpp/grpcpp.h>
 
+#include "../client_state.h"
+#include "../consumer_queue.h"
 #include "client_replica.grpc.pb.h"
 
 using namespace std;
@@ -17,11 +19,12 @@ using common::SignedMessage;
 class ClientReplicaGrpcClient {
  private:
   std::unique_ptr<ClientReplicaGrpc::Stub> stub_;
+  ClientState* state_;
 
  public:
-  ClientReplicaGrpcClient(std::shared_ptr<Channel> channel);
+  ClientReplicaGrpcClient(std::shared_ptr<Channel> channel, ClientState* state);
   int clientRequest(const string& msg, const string& sig);
-  int clientReply();
+  int clientReply(const string& clientPubKey);
 };
 
 #endif

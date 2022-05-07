@@ -6,9 +6,12 @@ import "common.proto";
 
 service ClientReplicaGrpc {
     rpc Request (common.SignedMessage) returns (common.Empty) {}
-    rpc Reply (common.Empty) returns (stream common.SignedMessage) {}
+    rpc Reply (ReplyReq) returns (stream common.SignedMessage) {}
 }
 
+message ReplyReq {
+    bytes  client_id = 1; // client public key as client id
+}
 
 // GRPC unrelated messages
 
