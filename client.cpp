@@ -1,20 +1,21 @@
 #include <iostream>
 #include "client_operation.h"
 #include "common.h"
+#include <nlohmann/json.hpp>
 
 void usage(char *argv[]) {
-  printf("usage: %s -r <replica_ip_port>  [-h]\n", argv[0]);
+  printf("usage: %s -c config_file  [-h]\n", argv[0]);
 }
 
 int main(int argc, char *argv[]) {
   extern char *optarg;
   int opt;
-  std::vector<std::string> replicas(4);
+  std::string config_file;
   int counter = 0;
-  while ((opt = getopt(argc, argv, "p:b:h")) != -1) {
+  while ((opt = getopt(argc, argv, "c:h")) != -1) {
     switch (opt) {
-      case 'p':
-        replicas[counter++] = optarg;
+      case 'c':
+        config_file = optarg;
         break;
       case 'h':
         usage(argv);
@@ -23,15 +24,24 @@ int main(int argc, char *argv[]) {
         usage(argv);
         exit(1);
     }
-    if (counter == 4) {
-      break;
-    }
   }
-  if (replicas.size() < 4) {
+  if (config_file == "") {
     usage(argv);
     exit(1);
   }
-  LibClient client = LibClient(replicas);
+
+  std::ifstream config_file_stream(config_file);
+  json config = json::parse(config_file_stream);
+
+
+  std::vector<std::string> replicas_ip_ports;
+
+  for (auto& replica_conf : config["replicas"]) {
+    replicas_ip_ports.push_back(replica_conf["ip_port"]);
+  }
+
+
+  LibClient client = LibClient(replicas_ip_ports);
 
   std::string action = "";
   int offset = -1;
