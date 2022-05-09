@@ -3,6 +3,8 @@
 #include <mutex>
 #include <queue>
 #include <thread>
+typedef std::chrono::time_point<std::chrono::high_resolution_clock> time_type;
+
 
 template <typename T>
 class consumer_queue {
@@ -20,7 +22,8 @@ class consumer_queue {
     return 0;
   };
 
-  int do_get(auto start_time, T& res) {
+  int do_get(time_type start_time, T& res) {
+    std::unique_lock<std::mutex> ul(lock);
     while (this->buffer.empty()) {
       if (time_checker(start_time)) {
         return -1;
@@ -32,7 +35,7 @@ class consumer_queue {
       return -1;
     }
 
-    std::unique_lock<std::mutex> ul(lock);
+    
     res = this->buffer.front();
     this->buffer.pop();
     ul.unlock();
@@ -40,7 +43,7 @@ class consumer_queue {
   };
 
  private:
-  bool time_checker(auto start_time) {
+  bool time_checker(time_type start_time) {
     auto end_time = std::chrono::high_resolution_clock::now();
     if (std::chrono::duration_cast<std::chrono::microseconds>(end_time -
                                                               start_time)
