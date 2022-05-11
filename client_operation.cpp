@@ -103,7 +103,6 @@ void LibClient::client_write(int offset, std::string buf) {
   cmd.mutable_o()->mutable_write()->set_offset(offset);
   cmd.mutable_o()->mutable_write()->set_data(buf);
   cmd.set_t(timestamp_d);
-  // TODO: add public key
   cmd.set_c(state_.public_key);
   int res = replicas[0]->clientRequest(cmd);
 
