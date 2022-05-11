@@ -103,7 +103,7 @@ void LibClient::client_write(int offset, std::string buf) {
     }
 
     // Verify Message
-
+    
     // TODO: Check the message's timestamp
 
     // Timestamp match >> add to hashTable, else discard
