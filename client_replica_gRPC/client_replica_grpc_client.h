@@ -3,6 +3,8 @@
 
 #include <grpcpp/grpcpp.h>
 
+#include <thread>
+
 #include "../client_state.h"
 #include "../consumer_queue.h"
 #include "client_replica.grpc.pb.h"
@@ -25,7 +27,8 @@ class ClientReplicaGrpcClient {
  public:
   ClientReplicaGrpcClient(std::shared_ptr<Channel> channel, ClientState* state);
   int clientRequest(const client_replica::RequestCmd& cmd);
-  int clientReply(const string& clientPubKey);
+  void clientReply();
+  std::thread thread_func();
 };
 
 #endif

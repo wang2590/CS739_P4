@@ -40,6 +40,7 @@ Status ClientReplicaGrpcServiceImpl::Reply(
     ServerContext* context, const ReplyReq* request,
     ServerWriter<SignedMessage>* reply_writer) {
   SignedMessage* reply = new SignedMessage();
+  const string client_id = request->client_id();
   // TODO: set message and signature
   // reply->set_message();
   // reply->set_signature();

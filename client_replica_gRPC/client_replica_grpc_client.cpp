@@ -13,7 +13,6 @@
 #include "../lib_crypto.h"
 #include "client_replica.grpc.pb.h"
 
-
 #define TIMEOUT 10 * 1000  // unit in ms, 10 seconds
 
 using namespace client_replica;
@@ -43,9 +42,9 @@ int ClientReplicaGrpcClient::clientRequest(const RequestCmd& cmd) {
     return status.error_code();
 }
 
-int ClientReplicaGrpcClient::clientReply(const string& clientPubKey) {
+void ClientReplicaGrpcClient::clientReply() {
   ReplyReq request;
-  request.set_client_id(clientPubKey);
+  // request.set_client_id(state_->public_key);
   SignedMessage reply;
   ClientContext context;
   unique_ptr<ClientReader<SignedMessage>> reader(
@@ -53,11 +52,10 @@ int ClientReplicaGrpcClient::clientReply(const string& clientPubKey) {
   while (reader->Read(&reply)) {
     state_->q->do_fill(make_pair(reply.message(), reply.signature()));
   }
+  // Technitically shuold never finish
   Status status = reader->Finish();
-  if (status.ok()) {
-    return 0;
-  }
-  cout << "There was an error in client request: " << status.error_message()
-       << endl;
-  return status.error_code();
+}
+
+std::thread ClientReplicaGrpcClient::thread_func() {
+  return std::thread([=] { clientReply(); });
 }

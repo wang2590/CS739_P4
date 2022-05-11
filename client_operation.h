@@ -1,6 +1,7 @@
 #ifndef CLIENT_OPERATION_H
 #define CLIENT_OPERATION_H
 #include <string>
+#include <thread>
 #include <vector>
 
 #include "client_replica_gRPC/client_replica_grpc_client.h"
@@ -20,6 +21,7 @@ class LibClient {
   ClientState state_;
   int quarum_num;
   std::vector<std::unique_ptr<ClientReplicaGrpcClient>> replicas;
+  void initClientReplyThread();
 };
 
 #endif

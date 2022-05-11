@@ -131,6 +131,7 @@ if(BUILD_CLIENT)
     client_replica_client
     cr_grpc_proto
     nlohmann_json::nlohmann_json
+    pthread
     ${_REFLECTION}
     ${_GRPC_GRPCPP}
     ${_PROTOBUF_LIBPROTOBUF})
