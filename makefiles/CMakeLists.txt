@@ -125,12 +125,13 @@ if(BUILD_CLIENT)
     ${_GRPC_GRPCPP}
     ${_PROTOBUF_LIBPROTOBUF})
   ## add executables
-  set(CLIENT ../client.cpp ../client_operation.cpp ../client_operation.h)
+  set(CLIENT ../client.cpp ../client_operation.cpp ../lib_crypto.cpp)
   add_executable(client ${CLIENT})
   target_link_libraries(client
     client_replica_client
     cr_grpc_proto
     nlohmann_json::nlohmann_json
+    pthread
     ${_REFLECTION}
     ${_GRPC_GRPCPP}
     ${_PROTOBUF_LIBPROTOBUF})

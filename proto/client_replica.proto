@@ -17,7 +17,7 @@ message ReplyReq {
 
 message RequestCmd {
     OperationCmd o = 1;
-    int64 t = 2;
+    double t = 2;
     bytes c = 3;
 }
 
@@ -39,7 +39,7 @@ message WriteRequestCmd {
 
 message ReplyCmd {
     int32 v = 1;
-    int64 t = 2;
+    double t = 2;
     bytes c = 3;
     int32 i = 4;
     ReplyData r = 5;
