@@ -228,17 +228,16 @@ Status ReplicaReplicaGrpcServiceImpl::Commit(ServerContext* context,
       last_commited_operation_cv_.wait(last_commit_lock);
     }
 
-    ReplyData result;
-    if (PerformOperation(op.request.o(), &result) != 0) {
-      return Status(StatusCode::INTERNAL, "Failed to perform the operation");
-    }
-
     ReplyCmd reply_cmd;
     reply_cmd.set_v(state_->view);
     reply_cmd.set_t(op.request.t());
     reply_cmd.set_c(op.request.c());
     reply_cmd.set_i(state_->replica_id);
-    // reply_cmd.set_r(???);  // TODO: the result
+
+    if (PerformOperation(op.request.o(), reply_cmd.mutable_r()) != 0) {
+      return Status(StatusCode::INTERNAL, "Failed to perform the operation");
+    }
+
     state_->replies.do_fill(reply_cmd);
 
     last_commited_operation_ = commit_cmd.n();
