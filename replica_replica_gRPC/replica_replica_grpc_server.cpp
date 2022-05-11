@@ -261,5 +261,47 @@ Status ReplicaReplicaGrpcServiceImpl::Checkpoint(ServerContext* context,
 
 int ReplicaReplicaGrpcServiceImpl::PerformOperation(
     const OperationCmd& operation_cmd, ReplyData* result) {
-  return 0;
+  if (operation_cmd.has_read()) {
+    const ReadRequestCmd& read = operation_cmd.read();
+
+    std::string buf(kBlockSize, '\0');
+    int res =
+        pread(state_->mount_file_fd, buf.data(), kBlockSize, read.offset());
+    if (res < 0) {
+      perror("read");
+      return res;
+    } else if (res != kBlockSize) {
+      return -1;
+    }
+
+    result->mutable_read()->set_data(buf);
+
+    return 0;
+  } else if (operation_cmd.has_write()) {
+    const WriteRequestCmd& write = operation_cmd.write();
+
+    if (write.data().size() != kBlockSize) {
+      result->mutable_write()->set_ok(false);
+      return 0;
+    }
+
+    int res;
+    res = pwrite(state_->mount_file_fd, write.data().data(), kBlockSize,
+                 write.offset());
+    if (res < 0) {
+      perror("pwrite");
+      return res;
+    }
+    res = fsync(state_->mount_file_fd);
+    if (res < 0) {
+      perror("fsync");
+      return res;
+    }
+
+    result->mutable_write()->set_ok(true);
+
+    return 0;
+  } else {
+    return -1;
+  }
 }
