@@ -4,17 +4,17 @@
 #include <grpcpp/ext/proto_server_reflection_plugin.h>
 #include <grpcpp/grpcpp.h>
 
+#include <condition_variable>
 #include <mutex>
+#include <unordered_map>
+#include <vector>
 
 #include "../replica_state.h"
 #include "client_replica.grpc.pb.h"
 #include "replica_replica.grpc.pb.h"
 #include "replica_replica_grpc_client.h"
 
-using grpc::Server;
-using grpc::ServerBuilder;
 using grpc::ServerContext;
-// using grpc::ServerReader;
 using grpc::Status;
 
 using common::Empty;
@@ -39,8 +39,18 @@ class ReplicaReplicaGrpcServiceImpl final : public ReplicaReplicaGrpc::Service {
  private:
   ReplicaState* state_;
 
-  std::vector<client_replica::RequestCmd> operation_history_;
+  struct OperationState {
+    client_replica::RequestCmd request;
+    std::string digest;
+    std::unordered_map<int, SignedMessage> prepare_signatures;
+    std::unordered_map<int, SignedMessage> commit_signatures;
+
+    OperationState(client_replica::RequestCmd req, const std::string& d)
+        : request(req), digest(d) {}
+  };
+  std::vector<OperationState> operation_history_;
   std::mutex operation_history_lock_;
+  std::condition_variable operation_history_cv_;
 };
 
 void RunServer(string serverAddress);

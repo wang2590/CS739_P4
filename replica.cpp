@@ -72,6 +72,7 @@ int main(int argc, char *argv[]) {
   // setup default state
   state.primary = 0;
   state.view = 0;
+  state.f = (state.replica_clients.size() - 1) / 3;
 
   // grpc server
   ReplicaReplicaGrpcServiceImpl service1(&state);

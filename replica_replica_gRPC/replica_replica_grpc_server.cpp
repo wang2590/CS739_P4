@@ -32,7 +32,9 @@ Status ReplicaReplicaGrpcServiceImpl::PrePrepare(ServerContext* context,
                                                  const PrePrepareReq* request,
                                                  Empty* reply) {
   if (state_->replica_id == state_->primary) {
-    // The primary itself should not receive such message. Ignore it.
+    std::cout
+        << "The primary should not receive a pre-prepare message. Ignore it."
+        << std::endl;
     return Status(StatusCode::PERMISSION_DENIED,
                   "Only the primary can send pre-prepare.");
   } else {
@@ -45,7 +47,8 @@ Status ReplicaReplicaGrpcServiceImpl::PrePrepare(ServerContext* context,
     if (!VerifyAndDecodeMessage(
             preprepare, state_->replicas_public_keys[state_->primary].get(),
             &preprepare_cmd)) {
-      // This pre-prepare is not signed properly by the primary
+      std::cout << "This pre-prepare is not signed properly by the primary."
+                << std::endl;
       return Status(StatusCode::PERMISSION_DENIED,
                     "Only the primary can send pre-prepare.");
     }
@@ -68,31 +71,93 @@ Status ReplicaReplicaGrpcServiceImpl::PrePrepare(ServerContext* context,
 
     // ==== Check n and add the request to history ====
     {
+      // TODO: Check if n is between low and high water mark
       const std::lock_guard<std::mutex> lock(operation_history_lock_);
       if (preprepare_cmd.n() != operation_history_.size()) {
         goto faulty_primary;
       }
-      operation_history_.push_back(client_cmd);
+      operation_history_.emplace_back(client_cmd, preprepare_cmd.d());
     }
+    operation_history_cv_.notify_all();
 
     // ==== Send prepare message ====
 
     for (const auto& replica_client : state_->replica_clients) {
-      replica_client->ReplicaPrepareClient(
-          preprepare_cmd.v(), preprepare_cmd.n(), preprepare_cmd.d(),
-          state_->replica_id);
+      if (replica_client == nullptr) continue;
+      if (replica_client->ReplicaPrepareClient(
+              preprepare_cmd.v(), preprepare_cmd.n(), preprepare_cmd.d(),
+              state_->replica_id) != 0) {
+        // We can ignore the error because it does not need to take action for
+        // a faulty replica.
+        std::cout << "Fail to send prepare message to a replica. Ignore it."
+                  << std::endl;
+      }
     }
+    return Status::OK;
+
   faulty_primary:
     // TODO: view change
+    std::cout << "Faulty primary." << std::endl;
     return Status(StatusCode::PERMISSION_DENIED,
                   "Only the primary can send pre-prepare.");
-    return Status::OK;
   }
 }
 
 Status ReplicaReplicaGrpcServiceImpl::Prepare(ServerContext* context,
                                               const SignedMessage* request,
                                               Empty* reply) {
+  // ==== Verify the authenticity of prepare message ====
+
+  PrepareCmd preprepare_cmd;
+  preprepare_cmd.ParseFromString(request->message());
+
+  if (preprepare_cmd.i() >= state_->replicas_public_keys.size()) {
+    std::cout << "Invalid replica number in the prepare message." << std::endl;
+    return Status(StatusCode::PERMISSION_DENIED, "Invalid replica number");
+  }
+
+  if (!VerifyMessage(request->message(), request->signature(),
+                     state_->replicas_public_keys[preprepare_cmd.i()].get())) {
+    std::cout << "Incorrect signature of the prepare message." << std::endl;
+    return Status(StatusCode::PERMISSION_DENIED, "Incorrect signature");
+  }
+
+  if (preprepare_cmd.v() != state_->view) {
+    std::cout << "Incorrect view number in the prepare message." << std::endl;
+    return Status(StatusCode::PERMISSION_DENIED, "Incorrect view number");
+  }
+
+  std::unique_lock<std::mutex> lock(operation_history_lock_);
+  while (preprepare_cmd.n() < operation_history_.size()) {
+    operation_history_cv_.wait(lock);
+  }
+
+  OperationState& op = operation_history_[preprepare_cmd.n()];
+  if (preprepare_cmd.d() != op.digest) {
+    std::cout << "Incorrect digest in the prepare message." << std::endl;
+    return Status(StatusCode::PERMISSION_DENIED, "Incorrect digest");
+  }
+
+  // ==== Store the signatures ====
+
+  op.prepare_signatures[preprepare_cmd.i()] = *request;
+
+  // ==== Send commit message ====
+
+  if (op.prepare_signatures.size() >= 2 * state_->f) {
+    for (const auto& replica_client : state_->replica_clients) {
+      if (replica_client == nullptr) continue;
+      if (replica_client->ReplicaCommitClient(
+              preprepare_cmd.v(), preprepare_cmd.n(), preprepare_cmd.d(),
+              state_->replica_id) != 0) {
+        // We can ignore the error because it does not need to take action for
+        // a faulty replica.
+        std::cout << "Fail to send commit message to a replica. Ignore it."
+                  << std::endl;
+      }
+    }
+  }
+
   return Status::OK;
 }
 Status ReplicaReplicaGrpcServiceImpl::Commit(ServerContext* context,
