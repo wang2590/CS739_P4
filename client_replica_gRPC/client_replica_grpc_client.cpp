@@ -54,7 +54,8 @@ void ClientReplicaGrpcClient::clientReply() {
   while (reader->Read(&reply)) {
     ReplyCmd result;
     if (VerifyAndDecodeMessage(
-            reply, state_->replicas_public_keys[replicaID].get(), &result)) {
+            reply, state_->replicas_public_keys[replicaID].get(), &result) &&
+        replicaID == result.i()) {
       state_->q->do_fill(result);
     } else {
       cout << "Error in reply Msg from Replica: " << replicaID << endl;

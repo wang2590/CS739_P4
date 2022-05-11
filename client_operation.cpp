@@ -75,7 +75,7 @@ void LibClient::client_read(int offset) {
 
   auto time_out = std::chrono::system_clock::now() + 1000ms;
   // consumer
-  while (hashTable.size() < 2 * quarum_num + 1) {
+  while (hashTable.size() <= 2 * quarum_num + 1) {
     ReplyCmd result;
     int ret = state_.q->do_get(time_out, result);
     if (ret != 0) {
@@ -89,20 +89,22 @@ void LibClient::client_read(int offset) {
       verifyID.insert(result.i());
       if (hashTable[data] > quarum_num) {
         cout << "read success: " << data << endl;
+        return;
       }
     }
   }
   cout << "read Failed" << endl;
   return;
 }
+
 void LibClient::client_write(int offset, std::string buf) {
+  std::unordered_set<int> verifyID;
   // set double timestamp
   auto timestamp = std::chrono::high_resolution_clock::now();
   auto timestamp_ns =
       std::chrono::time_point_cast<std::chrono::nanoseconds>(timestamp);
   double timestamp_d = timestamp_ns.time_since_epoch().count();
   std::string dumb = "";
-  std::set<int> s;  // Replica Id
   int counter = 0;
 
   RequestCmd cmd;
@@ -110,31 +112,30 @@ void LibClient::client_write(int offset, std::string buf) {
   cmd.mutable_o()->mutable_write()->set_offset(offset);
   cmd.mutable_o()->mutable_write()->set_data(buf);
   cmd.set_t(timestamp_d);
-  // TODO: add public key
   cmd.set_c(state_.public_key);
   int res = replicas[0]->clientRequest(cmd);
 
-  auto time_out = timestamp + 100ms;
+  auto time_out = std::chrono::system_clock::now() + 1000ms;
 
   // consumer
-  while (s.size() < 2 * this->quarum_num + 1) {
+  while (replicas.size() - verifyID.size() >= (quarum_num + 1 - counter)) {
     ReplyCmd result;
     int ret = state_.q->do_get(time_out, result);
-    if (ret == -1) {
-      break;
-    }
-
-    // Verify Message
-
-    // TODO: Check the message's timestamp
-
-    // Timestamp match >> add to hashTable, else discard
-
-    // if count is over quarum_num, write success!
-    if (counter > this->quarum_num) {
-      std::cout << "Write Success!\n";
+    if (ret != 0) {
+      cout << "read command timeout error" << endl;
       return;
     }
+    if (result.t() == timestamp_d &&
+        verifyID.find(result.i()) == verifyID.end()) {
+      bool data = result.r().write().ok();
+      counter += data;
+      verifyID.insert(result.i());
+      if (counter > quarum_num) {
+        cout << "write success: " << endl;
+        return;
+      }
+    }
   }
-  std::cout << "Write Failed!\n";
+  cout << "Write Failed" << endl;
+  return;
 }
