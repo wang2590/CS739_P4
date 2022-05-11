@@ -44,7 +44,7 @@ int ClientReplicaGrpcClient::clientRequest(const RequestCmd& cmd) {
 
 void ClientReplicaGrpcClient::clientReply() {
   ReplyReq request;
-  // request.set_client_id(state_->public_key);
+  request.set_client_id(state_->public_key);
   SignedMessage reply;
   ClientContext context;
   unique_ptr<ClientReader<SignedMessage>> reader(

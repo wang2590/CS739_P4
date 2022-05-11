@@ -43,8 +43,7 @@ int main(int argc, char *argv[]) {
   }
   LibClient client =
       LibClient(replicas_ip_ports, replicas_public_keys,
-                config["private_key_path"],
-                config["public_key_path"]);
+                config["private_key_path"], config["public_key_path"]);
 
   std::string action = "";
   int offset = -1;

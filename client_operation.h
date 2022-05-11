@@ -1,5 +1,6 @@
 #ifndef CLIENT_OPERATION_H
 #define CLIENT_OPERATION_H
+#include <fstream>
 #include <string>
 #include <thread>
 #include <vector>
@@ -9,11 +10,13 @@
 #include "consumer_queue.h"
 #include "lib_crypto.h"
 
+
 class LibClient {
  public:
-  LibClient(std::vector<std::string>& ip_ports,
-            std::vector<std::string>& replicas_public_keys,
-            std::string private_key, std::string public_key);
+  LibClient(const std::vector<std::string>& ip_ports,
+            const std::vector<std::string>& replicas_public_keys,
+            const std::string& private_key_path,
+            const std::string& public_key_path);
   void client_read(int offset);
   void client_write(int offset, std::string buf);
 
@@ -22,6 +25,7 @@ class LibClient {
   int quarum_num;
   std::vector<std::unique_ptr<ClientReplicaGrpcClient>> replicas;
   void initClientReplyThread();
+  std::string readFile(std::string input);
 };
 
 #endif

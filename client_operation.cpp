@@ -14,18 +14,19 @@ using namespace std::chrono_literals;
 using namespace client_replica;
 typedef std::pair<std::string, std::string> p;
 
-LibClient::LibClient(std::vector<std::string>& ip_ports,
-                     std::vector<std::string>& replicas_public_keys,
-                     std::string private_key, std::string public_key) {
+LibClient::LibClient(const std::vector<std::string>& ip_ports,
+                     const std::vector<std::string>& replicas_public_keys,
+                     const std::string& private_key_path,
+                     const std::string& public_key_path) {
   state_.q = std::make_unique<consumer_queue<p>>();
-  state_.private_key = CreateRsaWithFilename(private_key, false);
-  state_.public_key = CreateRsaWithFilename(public_key, true);
+  state_.private_key = CreateRsaWithFilename(private_key_path, false);
+  state_.public_key = readFile(public_key_path);
   for (auto keys : replicas_public_keys) {
     state_.replicas_public_keys.push_back(CreateRsaWithFilename(keys, true));
   }
 
   quarum_num = (ip_ports.size() - 1) / 3;
-  for (std::string& ip_port : ip_ports) {
+  for (const std::string& ip_port : ip_ports) {
     auto client = std::make_unique<ClientReplicaGrpcClient>(
         grpc::CreateChannel(ip_port, grpc::InsecureChannelCredentials()),
         &state_);
@@ -41,6 +42,19 @@ void LibClient ::initClientReplyThread() {
   cout << "Start clientReply threads Call" << endl;
 }
 
+std::string LibClient::readFile(std::string input) {
+  fstream newfile;
+  newfile.open(input, ios::in);
+  string output;
+  if (newfile.is_open()) {
+    string tp;
+    while (getline(newfile, tp)) {
+      output += tp;
+    }
+    newfile.close();  // close the file object.
+  }
+  return output;
+}
 void LibClient::client_read(int offset) {
   using namespace std::literals;
   std::unordered_map<std::string, int> hashTable;  // message -> count
@@ -53,7 +67,7 @@ void LibClient::client_read(int offset) {
   RequestCmd cmd;
   cmd.mutable_o()->mutable_read()->set_offset(offset);
   cmd.set_t(timestamp_d);
-  // cmd.set_c(state_.public_key.get());
+  cmd.set_c(state_.public_key);
   int res = replicas[0]->clientRequest(cmd);
 
   auto time_out = std::chrono::system_clock::now() + 100ms;
@@ -89,7 +103,8 @@ void LibClient::client_write(int offset, std::string buf) {
   cmd.mutable_o()->mutable_write()->set_offset(offset);
   cmd.mutable_o()->mutable_write()->set_data(buf);
   cmd.set_t(timestamp_d);
-  // cmd.set_c(state_.public_key.get());
+  // TODO: add public key
+  cmd.set_c(state_.public_key);
   int res = replicas[0]->clientRequest(cmd);
 
   auto time_out = timestamp + 100ms;
