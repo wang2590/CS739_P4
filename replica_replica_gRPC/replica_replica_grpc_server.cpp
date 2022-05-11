@@ -220,13 +220,30 @@ Status ReplicaReplicaGrpcServiceImpl::Commit(ServerContext* context,
 
   // ==== Reply to the client ====
 
-  ReplyCmd reply_cmd;
-  reply_cmd.set_v(state_->view);
-  reply_cmd.set_t(op.request.t());
-  reply_cmd.set_c(op.request.c());
-  reply_cmd.set_i(state_->replica_id);
-  // reply_cmd.set_r(???);  // TODO: the result
-  state_->replies.do_fill(reply_cmd);
+  {
+    std::unique_lock<std::mutex> last_commit_lock(
+        last_commited_operation_lock_);
+
+    while (last_commited_operation_ != commit_cmd.n() - 1) {
+      last_commited_operation_cv_.wait(last_commit_lock);
+    }
+
+    ReplyData result;
+    if (PerformOperation(op.request.o(), &result) != 0) {
+      return Status(StatusCode::INTERNAL, "Failed to perform the operation");
+    }
+
+    ReplyCmd reply_cmd;
+    reply_cmd.set_v(state_->view);
+    reply_cmd.set_t(op.request.t());
+    reply_cmd.set_c(op.request.c());
+    reply_cmd.set_i(state_->replica_id);
+    // reply_cmd.set_r(???);  // TODO: the result
+    state_->replies.do_fill(reply_cmd);
+
+    last_commited_operation_ = commit_cmd.n();
+    last_commited_operation_cv_.notify_all();
+  }
 
   lock.unlock();
   return Status::OK;
@@ -242,26 +259,49 @@ Status ReplicaReplicaGrpcServiceImpl::Checkpoint(ServerContext* context,
   return Status::OK;
 }
 
-// // Run this in Primary/backup's main function
-// void RunServer(string serverAddress) {
-//   ReplicaReplicaGrpcServiceImpl service1;
-//   // ClientServergRPCServiceImpl service2;
-//   grpc::EnableDefaultHealthCheckService(true);
-//   grpc::reflection::InitProtoReflectionServerBuilderPlugin();
-//   ServerBuilder builder;
-//   builder.AddListeningPort(serverAddress, grpc::InsecureServerCredentials());
-//   // multiple services can be registered
-//   //
-//   https://github.com/grpc/grpc/blob/master/test/cpp/end2end/hybrid_end2end_test.cc
-//   builder.RegisterService(&service1);
-//   // builder.RegisterService(&service2);
-//   std::unique_ptr<Server> server(builder.BuildAndStart());
-//   std::cout << "Server listening on " << serverAddress << std::endl;
-//   server->Wait();
-// }
+int ReplicaReplicaGrpcServiceImpl::PerformOperation(
+    const OperationCmd& operation_cmd, ReplyData* result) {
+  if (operation_cmd.has_read()) {
+    const ReadRequestCmd& read = operation_cmd.read();
 
-// int main(int argc, char** argv) {
-//   string serverAddress("0.0.0.0:50051");
-//   RunServer(serverAddress);
-//   return 0;
-// }
+    std::string buf(kBlockSize, '\0');
+    int res =
+        pread(state_->mount_file_fd, buf.data(), kBlockSize, read.offset());
+    if (res < 0) {
+      perror("read");
+      return res;
+    } else if (res != kBlockSize) {
+      return -1;
+    }
+
+    result->mutable_read()->set_data(buf);
+
+    return 0;
+  } else if (operation_cmd.has_write()) {
+    const WriteRequestCmd& write = operation_cmd.write();
+
+    if (write.data().size() != kBlockSize) {
+      result->mutable_write()->set_ok(false);
+      return 0;
+    }
+
+    int res;
+    res = pwrite(state_->mount_file_fd, write.data().data(), kBlockSize,
+                 write.offset());
+    if (res < 0) {
+      perror("pwrite");
+      return res;
+    }
+    res = fsync(state_->mount_file_fd);
+    if (res < 0) {
+      perror("fsync");
+      return res;
+    }
+
+    result->mutable_write()->set_ok(true);
+
+    return 0;
+  } else {
+    return -1;
+  }
+}

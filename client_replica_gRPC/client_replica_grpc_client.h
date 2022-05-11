@@ -13,6 +13,7 @@ using grpc::ClientContext;
 using grpc::Status;
 
 using client_replica::ClientReplicaGrpc;
+using client_replica::RequestCmd;
 using common::Empty;
 using common::SignedMessage;
 

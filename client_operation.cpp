@@ -9,6 +9,7 @@
 
 #include "common.h"
 #include "consumer_queue.h"
+
 using namespace std::chrono_literals;
 using namespace client_replica;
 typedef std::pair<std::string, std::string> p;
@@ -22,6 +23,7 @@ LibClient::LibClient(std::vector<std::string>& ip_ports,
   for (auto keys : replicas_public_keys) {
     state_.replicas_public_keys.push_back(CreateRsaWithFilename(keys, true));
   }
+
   quarum_num = (ip_ports.size() - 1) / 3;
   for (std::string& ip_port : ip_ports) {
     auto client = std::make_unique<ClientReplicaGrpcClient>(
@@ -36,13 +38,9 @@ void LibClient::client_read(int offset) {
   std::unordered_map<std::string, int> hashTable;  // message -> count
   auto timestamp = std::chrono::high_resolution_clock::now();
 
-  
-  ReadRequestCmd read_cmd;
-  OperationCmd op;
+
   RequestCmd cmd;
-  read_cmd.set_offset(offset);
-  op.set_read(read_cmd);
-  cmd.set_o(op);
+  cmd.mutable_o()->mutable_read()->set_offset(offset);
   cmd.set_t(timestamp);
   cmd.set_c(state_.public_key.get());
   int res = replicas[0]->clientRequest(cmd);
@@ -76,12 +74,9 @@ void LibClient::client_write(int offset, std::string buf) {
   int counter = 0;
 
   RequestCmd cmd;
-  WriteRequestCmd write_cmd;
-  OperationCmd op;
-  write_cmd.set_offset(offset);
-  write_cmd.set_data(buf);
-  op.set_write(write_cmd);
-  cmd.set_o(op);
+
+  cmd.mutable_o()->mutable_write()->set_offset(offset);
+  cmd.mutable_o()->mutable_write()->set_data(buf);
   cmd.set_t(timestamp);
   cmd.set_c(state_.public_key.get());
   int res = replicas[0]->clientRequest(cmd);
