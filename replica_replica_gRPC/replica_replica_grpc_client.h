@@ -26,7 +26,7 @@ class ReplicaReplicaGrpcClient {
 
  private:
   template <class T>
-  int CreateSignedMessage(const T& proto_cmd, common::SignedMessage* result);
+  int ReplicaSignMessage(const T& proto_cmd, common::SignedMessage* result);
 
   std::unique_ptr<replica_replica::ReplicaReplicaGrpc::Stub> stub_;
   ReplicaState* state_;

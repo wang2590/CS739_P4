@@ -36,7 +36,7 @@ int ReplicaReplicaGrpcClient::ReplicaPrePrepareClient(int32_t v, int64_t n,
   cmd.set_d(Sha256Sum(m));
 
   PrePrepareReq request;
-  if (CreateSignedMessage(cmd, request.mutable_preprepare()) < 0) return -1;
+  if (ReplicaSignMessage(cmd, request.mutable_preprepare()) < 0) return -1;
   request.mutable_client_message()->set_message(m);
   request.mutable_client_message()->set_signature(
       SignMessage(m, state_->private_key.get()));
@@ -60,7 +60,7 @@ int ReplicaReplicaGrpcClient::ReplicaPrepareClient(int32_t v, int64_t n,
   cmd.set_i(i);
 
   SignedMessage request;
-  if (CreateSignedMessage(cmd, &request) < 0) return -1;
+  if (ReplicaSignMessage(cmd, &request) < 0) return -1;
 
   Empty reply;
   ClientContext context;
@@ -81,7 +81,7 @@ int ReplicaReplicaGrpcClient::ReplicaCommitClient(int32_t v, int64_t n,
   cmd.set_i(i);
 
   SignedMessage request;
-  if (CreateSignedMessage(cmd, &request) < 0) return -1;
+  if (ReplicaSignMessage(cmd, &request) < 0) return -1;
 
   Empty reply;
   ClientContext context;
@@ -112,13 +112,7 @@ int ReplicaReplicaGrpcClient::ReplicaCheckpointClient(const string& msg,
 }
 
 template <class T>
-int ReplicaReplicaGrpcClient::CreateSignedMessage(const T& proto_cmd,
-                                                  SignedMessage* result) {
-  std::string serilized_cmd = proto_cmd.SerializeAsString();
-  if (serilized_cmd == "") return -1;
-
-  result->set_message(serilized_cmd);
-  result->set_signature(SignMessage(serilized_cmd, state_->private_key.get()));
-
-  return 0;
+int ReplicaReplicaGrpcClient::ReplicaSignMessage(const T& proto_cmd,
+                                                 SignedMessage* result) {
+  return SignMessage(proto_cmd, state_->private_key.get(), result);
 }

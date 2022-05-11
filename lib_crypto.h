@@ -16,6 +16,17 @@ RsaPtr CreateRsaWithFilename(const std::string &filename, bool public_key);
 
 std::string SignMessage(const std::string &message, RSA *rsa);
 
+template <class T>
+int SignMessage(const T &proto_cmd, RSA *rsa, common::SignedMessage *result) {
+  std::string serilized_cmd = proto_cmd.SerializeAsString();
+  if (serilized_cmd == "") return -1;
+
+  result->set_message(serilized_cmd);
+  result->set_signature(SignMessage(serilized_cmd, rsa));
+
+  return 0;
+}
+
 bool VerifyMessage(const std::string &message, const std::string &signature,
                    RSA *rsa);
 
