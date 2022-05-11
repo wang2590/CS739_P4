@@ -25,8 +25,10 @@ using grpc::Status;
 using namespace std;
 
 ClientReplicaGrpcClient::ClientReplicaGrpcClient(
-    std::shared_ptr<Channel> channel, ClientState* state)
-    : stub_(ClientReplicaGrpc::NewStub(channel)), state_(state) {}
+    std::shared_ptr<Channel> channel, ClientState* state, int id)
+    : stub_(ClientReplicaGrpc::NewStub(channel)),
+      state_(state),
+      replicaID(id) {}
 
 int ClientReplicaGrpcClient::clientRequest(const RequestCmd& cmd) {
   SignedMessage request;
@@ -50,7 +52,14 @@ void ClientReplicaGrpcClient::clientReply() {
   unique_ptr<ClientReader<SignedMessage>> reader(
       stub_->Reply(&context, request));
   while (reader->Read(&reply)) {
-    state_->q->do_fill(make_pair(reply.message(), reply.signature()));
+    ReplyCmd result;
+    if (VerifyAndDecodeMessage(
+            reply, state_->replicas_public_keys[replicaID].get(), &result) &&
+        replicaID == result.i()) {
+      state_->q->do_fill(result);
+    } else {
+      cout << "Error in reply Msg from Replica: " << replicaID << endl;
+    }
   }
   // Technitically shuold never finish
   Status status = reader->Finish();

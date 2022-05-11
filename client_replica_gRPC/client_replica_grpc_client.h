@@ -23,9 +23,10 @@ class ClientReplicaGrpcClient {
  private:
   std::unique_ptr<ClientReplicaGrpc::Stub> stub_;
   ClientState* state_;
+  int replicaID;
 
  public:
-  ClientReplicaGrpcClient(std::shared_ptr<Channel> channel, ClientState* state);
+  ClientReplicaGrpcClient(std::shared_ptr<Channel> channel, ClientState* state, int id);
   int clientRequest(const client_replica::RequestCmd& cmd);
   void clientReply();
   std::thread thread_func();
