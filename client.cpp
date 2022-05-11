@@ -1,13 +1,12 @@
+#include <fstream>
 #include <iostream>
+#include <nlohmann/json.hpp>
+
 #include "client_operation.h"
 #include "common.h"
-#include <fstream>
-#include <nlohmann/json.hpp>
 using nlohmann::json;
 
-void usage(char *argv[]) {
-  printf("usage: %s -c config_file [-h]\n", argv[0]);
-}
+void usage(char *argv[]) { printf("usage: %s -c config_file [-h]\n", argv[0]); }
 
 int main(int argc, char *argv[]) {
   extern char *optarg;
@@ -33,17 +32,20 @@ int main(int argc, char *argv[]) {
   }
 
   std::ifstream config_file_stream(config_file);
-  json config = json::parse(config_file_stream);
+  json config = json::parse(config_file_stream);ß
 
-
+  // Set up the connection
   std::vector<std::string> replicas_ip_ports;
-
-  for (auto& replica_conf : config["replicas"]) {
+  std::vector<RsaPtr> replicas_public_keys;
+  for (auto &replica_conf : config["replicas"]) {
     replicas_ip_ports.push_back(replica_conf["ip_port"]);
+    replicas_public_keys.push_back(
+        CreateRsaWithFilename(replica_conf["public_key_path"], true));
   }
-
-
-  LibClient client = LibClient(replicas_ip_ports);
+  LibClient client =
+      LibClient(replicas_ip_ports, replicas_public_keys,
+                CreateRsaWithFilename(config["private_key_path"], false), ,
+                CreateRsaWithFilename(config["public_key_path"], true));
 
   std::string action = "";
   int offset = -1;

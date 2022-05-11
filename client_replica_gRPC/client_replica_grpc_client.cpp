@@ -30,7 +30,7 @@ ClientReplicaGrpcClient::ClientReplicaGrpcClient(
 
 int ClientReplicaGrpcClient::clientRequest(const RequestCmd& cmd) {
   SignedMessage request;
-  if (SignMessage(cmd, /*rsa*/, &request) < 0) return -1;
+  if (SignMessage(cmd, state_->private_key.get(), &request) < 0) return -1;
 
   Empty reply;
   ClientContext context;
@@ -41,6 +41,7 @@ int ClientReplicaGrpcClient::clientRequest(const RequestCmd& cmd) {
   else
     return status.error_code();
 }
+
 int ClientReplicaGrpcClient::clientReply(const string& clientPubKey) {
   ReplyReq request;
   request.set_client_id(clientPubKey);
