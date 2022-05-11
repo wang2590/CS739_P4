@@ -60,6 +60,10 @@ class ReplicaReplicaGrpcServiceImpl final : public ReplicaReplicaGrpc::Service {
   std::vector<OperationState> operation_history_;
   std::mutex operation_history_lock_;
   std::condition_variable operation_history_cv_;
+
+  int last_commited_operation_ = -1;
+  std::mutex last_commited_operation_lock_;
+  std::condition_variable last_commited_operation_cv_;
 };
 
 void RunServer(string serverAddress);

@@ -220,13 +220,25 @@ Status ReplicaReplicaGrpcServiceImpl::Commit(ServerContext* context,
 
   // ==== Reply to the client ====
 
-  ReplyCmd reply_cmd;
-  reply_cmd.set_v(state_->view);
-  reply_cmd.set_t(op.request.t());
-  reply_cmd.set_c(op.request.c());
-  reply_cmd.set_i(state_->replica_id);
-  // reply_cmd.set_r(???);  // TODO: the result
-  state_->replies.do_fill(reply_cmd);
+  {
+    std::unique_lock<std::mutex> last_commit_lock(
+        last_commited_operation_lock_);
+
+    while (last_commited_operation_ != commit_cmd.n() - 1) {
+      last_commited_operation_cv_.wait(last_commit_lock);
+    }
+
+    ReplyCmd reply_cmd;
+    reply_cmd.set_v(state_->view);
+    reply_cmd.set_t(op.request.t());
+    reply_cmd.set_c(op.request.c());
+    reply_cmd.set_i(state_->replica_id);
+    // reply_cmd.set_r(???);  // TODO: the result
+    state_->replies.do_fill(reply_cmd);
+
+    last_commited_operation_ = commit_cmd.n();
+    last_commited_operation_cv_.notify_all();
+  }
 
   lock.unlock();
   return Status::OK;
