@@ -7,29 +7,29 @@
 #include <unordered_map>
 #include <utility>
 
+#include "client_replica.grpc.pb.h"
 #include "common.h"
 #include "consumer_queue.h"
 
 using namespace std::chrono_literals;
 using namespace client_replica;
-typedef std::pair<std::string, std::string> p;
 
 LibClient::LibClient(const std::vector<std::string>& ip_ports,
                      const std::vector<std::string>& replicas_public_keys,
                      const std::string& private_key_path,
                      const std::string& public_key_path) {
-  state_.q = std::make_unique<consumer_queue<p>>();
+  state_.q = std::make_unique<consumer_queue<ReplyCmd>>();
   state_.private_key = CreateRsaWithFilename(private_key_path, false);
   state_.public_key = readFile(public_key_path);
   for (auto keys : replicas_public_keys) {
     state_.replicas_public_keys.push_back(CreateRsaWithFilename(keys, true));
   }
-
+  int index = 0;
   quarum_num = (ip_ports.size() - 1) / 3;
   for (const std::string& ip_port : ip_ports) {
     auto client = std::make_unique<ClientReplicaGrpcClient>(
         grpc::CreateChannel(ip_port, grpc::InsecureChannelCredentials()),
-        &state_);
+        &state_, index++);
     this->replicas.push_back(std::move(client));
   }
   // create thread to call clientReply from each replicas
@@ -70,15 +70,17 @@ void LibClient::client_read(int offset) {
   cmd.set_c(state_.public_key);
   int res = replicas[0]->clientRequest(cmd);
 
-  auto time_out = std::chrono::system_clock::now() + 100ms;
+  auto time_out = std::chrono::system_clock::now() + 1000ms;
   // consumer
   while (hashTable.size() < 2 * this->quarum_num + 1) {
-    std::pair<std::string, std::string> result;
+    ReplyCmd result;
     int ret = state_.q->do_get(time_out, result);
     if (ret != 0) {
+      cout << "read command timeout error" << endl;
       return;
     }
 
+    // timestamp_d
     // TODO: Check the message's timestamp
 
     // Timestamp match >> add to hashTable, else discard
@@ -111,7 +113,7 @@ void LibClient::client_write(int offset, std::string buf) {
 
   // consumer
   while (s.size() < 2 * this->quarum_num + 1) {
-    std::pair<std::string, std::string> result;
+    ReplyCmd result;
     int ret = state_.q->do_get(time_out, result);
     if (ret == -1) {
       break;
