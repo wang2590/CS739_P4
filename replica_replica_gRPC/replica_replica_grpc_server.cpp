@@ -54,7 +54,9 @@ Status ReplicaReplicaGrpcServiceImpl::PrePrepare(ServerContext* context,
     }
 
     RequestCmd client_cmd;
-    client_cmd.ParseFromString(client_message.message());
+    if (!client_cmd.ParseFromString(client_message.message())) {
+      goto faulty_primary;
+    }
     RsaPtr rsa = CreateRsa(client_cmd.c(), true);
     if (!VerifyMessage(client_message.message(), client_message.signature(),
                        rsa.get())) {
