@@ -23,7 +23,7 @@ class ClientReplicaGrpcClient {
 
  public:
   ClientReplicaGrpcClient(std::shared_ptr<Channel> channel, ClientState* state);
-  int clientRequest(const string& msg, const string& sig);
+  int clientRequest(const RequestCmd& cmd);
   int clientReply(const string& clientPubKey);
 };
 

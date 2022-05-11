@@ -11,13 +11,12 @@
 #include <utility>
 
 #include "client_replica.grpc.pb.h"
+#include "lib_crypto.h"
 
 #define TIMEOUT 10 * 1000  // unit in ms, 10 seconds
 
-using client_replica::ClientReplicaGrpc;
-using client_replica::ReplyReq;
-using common::Empty;
-using common::SignedMessage;
+using namespace client_replica;
+using namespace common;
 using grpc::Channel;
 using grpc::ClientContext;
 using grpc::ClientReader;
@@ -29,22 +28,18 @@ ClientReplicaGrpcClient::ClientReplicaGrpcClient(
     std::shared_ptr<Channel> channel, ClientState* state)
     : stub_(ClientReplicaGrpc::NewStub(channel)), state_(state) {}
 
-int ClientReplicaGrpcClient::clientRequest(const string& msg,
-                                           const string& sig) {
+int ClientReplicaGrpcClient::clientRequest(const RequestCmd& cmd) {
   SignedMessage request;
-  request.set_message(msg);
-  request.set_signature(sig);
+  if (SignMessage(cmd, /*rsa*/, &request) < 0) return -1;
 
   Empty reply;
   ClientContext context;
   Status status = stub_->Request(&context, request, &reply);
 
-  if (status.ok()) {
+  if (status.ok())
     return 0;
-  }
-  cout << "There was an error in client request: " << status.error_message()
-       << endl;
-  return status.error_code();
+  else
+    return status.error_code();
 }
 int ClientReplicaGrpcClient::clientReply(const string& clientPubKey) {
   ReplyReq request;
