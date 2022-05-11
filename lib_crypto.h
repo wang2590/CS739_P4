@@ -6,7 +6,7 @@
 #include <memory>
 #include <string>
 
-#include "common.grpc.pb.h"
+#include "common.pb.h"
 
 typedef std::unique_ptr<RSA, decltype(RSA_free) *> RsaPtr;
 
