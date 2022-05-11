@@ -130,6 +130,7 @@ if(BUILD_CLIENT)
   target_link_libraries(client
     client_replica_client
     cr_grpc_proto
+    nlohmann_json::nlohmann_json
     ${_REFLECTION}
     ${_GRPC_GRPCPP}
     ${_PROTOBUF_LIBPROTOBUF})

@@ -32,7 +32,7 @@ int main(int argc, char *argv[]) {
   }
 
   std::ifstream config_file_stream(config_file);
-  json config = json::parse(config_file_stream);ß
+  json config = json::parse(config_file_stream);
 
   // Set up the connection
   std::vector<std::string> replicas_ip_ports;
