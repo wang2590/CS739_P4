@@ -76,13 +76,13 @@ Status ReplicaReplicaGrpcServiceImpl::PrePrepare(ServerContext* context,
     // ==== Check n and add the request to history ====
     {
       // TODO: Check if n is between low and high water mark
-      const std::lock_guard<std::mutex> lock(operation_history_lock_);
-      if (preprepare_cmd.n() != operation_history_.size()) {
+      const std::lock_guard<std::mutex> lock(state_->operation_history_lock);
+      if (preprepare_cmd.n() != state_->operation_history.size()) {
         goto faulty_primary;
       }
-      operation_history_.emplace_back(client_cmd, preprepare_cmd.d());
+      state_->operation_history.emplace_back(client_cmd, preprepare_cmd.d());
     }
-    operation_history_cv_.notify_all();
+    state_->operation_history_cv.notify_all();
 
     // ==== Send prepare message ====
 
@@ -137,12 +137,12 @@ Status ReplicaReplicaGrpcServiceImpl::Prepare(ServerContext* context,
     return Status(StatusCode::PERMISSION_DENIED, "Incorrect view number");
   }
 
-  std::unique_lock<std::mutex> lock(operation_history_lock_);
-  while (preprepare_cmd.n() < operation_history_.size()) {
-    operation_history_cv_.wait(lock);
+  std::unique_lock<std::mutex> lock(state_->operation_history_lock);
+  while (preprepare_cmd.n() < state_->operation_history.size()) {
+    state_->operation_history_cv.wait(lock);
   }
 
-  OperationState& op = operation_history_[preprepare_cmd.n()];
+  OperationState& op = state_->operation_history[preprepare_cmd.n()];
   if (preprepare_cmd.d() != op.digest) {
     std::cout << "Incorrect digest in the prepare message." << std::endl;
     return Status(StatusCode::PERMISSION_DENIED, "Incorrect digest");
@@ -198,12 +198,12 @@ Status ReplicaReplicaGrpcServiceImpl::Commit(ServerContext* context,
     return Status(StatusCode::PERMISSION_DENIED, "Incorrect view number");
   }
 
-  std::unique_lock<std::mutex> lock(operation_history_lock_);
-  while (commit_cmd.n() < operation_history_.size()) {
-    operation_history_cv_.wait(lock);
+  std::unique_lock<std::mutex> lock(state_->operation_history_lock);
+  while (commit_cmd.n() < state_->operation_history.size()) {
+    state_->operation_history_cv.wait(lock);
   }
 
-  OperationState& op = operation_history_[commit_cmd.n()];
+  OperationState& op = state_->operation_history[commit_cmd.n()];
 
   if (commit_cmd.d() != op.digest) {
     std::cout << "Incorrect digest in the prepare message." << std::endl;
@@ -222,10 +222,10 @@ Status ReplicaReplicaGrpcServiceImpl::Commit(ServerContext* context,
 
   {
     std::unique_lock<std::mutex> last_commit_lock(
-        last_commited_operation_lock_);
+        state_->last_commited_operation_lock);
 
-    while (last_commited_operation_ != commit_cmd.n() - 1) {
-      last_commited_operation_cv_.wait(last_commit_lock);
+    while (state_->last_commited_operation != commit_cmd.n() - 1) {
+      state_->last_commited_operation_cv.wait(last_commit_lock);
     }
 
     ReplyCmd reply_cmd;
@@ -240,21 +240,37 @@ Status ReplicaReplicaGrpcServiceImpl::Commit(ServerContext* context,
 
     state_->replies.do_fill(reply_cmd);
 
-    last_commited_operation_ = commit_cmd.n();
-    last_commited_operation_cv_.notify_all();
+    state_->last_commited_operation = commit_cmd.n();
+    state_->last_commited_operation_cv.notify_all();
   }
 
   lock.unlock();
   return Status::OK;
 }
+
 Status ReplicaReplicaGrpcServiceImpl::RelayRequest(ServerContext* context,
                                                    const SignedMessage* request,
                                                    Empty* reply) {
   return Status::OK;
 }
-Status ReplicaReplicaGrpcServiceImpl::Checkpoint(ServerContext* context,
-                                                 const SignedMessage* request,
-                                                 Empty* reply) {
+
+Status ReplicaReplicaGrpcServiceImpl::Recover(
+    ServerContext* context, const RecoverReq* request,
+    ServerWriter<RecoverReply>* reply_writer) {
+  int n = request->last_n();
+  std::lock_guard<std::mutex> last_commit_lock(
+      state_->last_commited_operation_lock);
+  while (n < state_->last_commited_operation) {
+    ++n;
+    std::lock_guard<std::mutex> lock(state_->operation_history_lock);
+
+    RecoverReply reply;
+    for (auto [i, signed_message] :
+         state_->operation_history[n].commit_signatures) {
+      reply.add_signed_commits()->CopyFrom(signed_message);
+    }
+    reply_writer->Write(reply);
+  }
   return Status::OK;
 }
 

@@ -19,6 +19,7 @@ using grpc::Channel;
 using grpc::ClientContext;
 // using grpc::ClientReader;
 // using grpc::ClientWriter;
+using grpc::ClientReader;
 using grpc::Status;
 
 using namespace common;
@@ -105,14 +106,23 @@ int ReplicaReplicaGrpcClient::ReplicaRelayRequestClient(
     return status.error_code();
 }
 
-// TODO: checkoint might remove for storing all logs
-int ReplicaReplicaGrpcClient::ReplicaCheckpointClient(const string& msg,
-                                                      const string& sig) {
-  return 0;
-}
-
 template <class T>
 int ReplicaReplicaGrpcClient::ReplicaSignMessage(const T& proto_cmd,
                                                  SignedMessage* result) {
   return SignMessage(proto_cmd, state_->private_key.get(), result);
+}
+
+int ReplicaReplicaGrpcClient::ReplicaRecoverClient(int last_n) {
+  RecoverReq request;
+  request.set_last_n(last_n);
+  RecoverReply reply;
+  ClientContext context;
+  std::unique_ptr<ClientReader<RecoverReply>> reader(
+      stub_->Recover(&context, request));
+
+  while (reader->Read(&reply)) {
+    // TODO
+  }
+
+  Status status = reader->Finish();
 }
