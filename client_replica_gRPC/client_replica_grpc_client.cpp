@@ -11,7 +11,7 @@
 #include <utility>
 
 #include "client_replica.grpc.pb.h"
-#include "lib_crypto.h"
+#include "../lib_crypto.h"
 
 #define TIMEOUT 10 * 1000  // unit in ms, 10 seconds
 

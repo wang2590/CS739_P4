@@ -8,9 +8,9 @@
 #include "consumer_queue.h"
 class LibClient {
  public:
-  LibClient(std::vector<std::string> ip_ports,
-            std::vector<RsaPtr>& replicas_public_keys, RsaPtr private_key,
-            RsaPtr public_key);
+  LibClient(std::vector<std::string>& ip_ports,
+            std::vector<std::string>& replicas_public_keys, std::string private_key,
+            std::string public_key);
   void client_read(int offset);
   void client_write(int offset, std::string buf);
 
