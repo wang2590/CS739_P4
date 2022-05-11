@@ -44,9 +44,18 @@ class ReplicaReplicaGrpcServiceImpl final : public ReplicaReplicaGrpc::Service {
     std::string digest;
     std::unordered_map<int, SignedMessage> prepare_signatures;
     std::unordered_map<int, SignedMessage> commit_signatures;
+    std::unique_ptr<std::condition_variable> prepare_signatures_cv;
 
-    OperationState(client_replica::RequestCmd req, const std::string& d)
-        : request(req), digest(d) {}
+    OperationState(const client_replica::RequestCmd& req, const std::string& d)
+        : request(req),
+          digest(d),
+          prepare_signatures_cv(std::make_unique<std::condition_variable>()) {}
+
+    bool prepared(int f) {
+      // 2*f+1 nodes agree on it, but the primary and itself do not send prepare
+      // message. So, we only need 2*f-1 prepare messages.
+      return prepare_signatures.size() >= 2 * f - 1;
+    }
   };
   std::vector<OperationState> operation_history_;
   std::mutex operation_history_lock_;

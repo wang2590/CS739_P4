@@ -5,6 +5,8 @@
 #include <string>
 #include <vector>
 
+#include "client_replica.pb.h"
+#include "consumer_queue.h"
 #include "lib_crypto.h"
 
 class ReplicaReplicaGrpcClient;
@@ -18,6 +20,7 @@ struct ReplicaState {
   std::vector<std::unique_ptr<ReplicaReplicaGrpcClient>> replica_clients;
   RsaPtr private_key = RsaPtr(nullptr, RSA_free);
   std::vector<RsaPtr> replicas_public_keys;
+  consumer_queue<client_replica::ReplyCmd> replies;
 };
 
 #endif

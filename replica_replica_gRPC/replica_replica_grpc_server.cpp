@@ -54,11 +54,15 @@ Status ReplicaReplicaGrpcServiceImpl::PrePrepare(ServerContext* context,
     }
 
     RequestCmd client_cmd;
-    client_cmd.ParseFromString(client_message.message());
-    RsaPtr rsa = CreateRsa(client_cmd.c(), true);
-    if (!VerifyMessage(client_message.message(), client_message.signature(),
-                       rsa.get())) {
+    if (!client_cmd.ParseFromString(client_message.message())) {
       goto faulty_primary;
+    }
+    {
+      RsaPtr rsa = CreateRsa(client_cmd.c(), true);
+      if (!VerifyMessage(client_message.message(), client_message.signature(),
+                         rsa.get())) {
+        goto faulty_primary;
+      }
     }
 
     if (preprepare_cmd.d() == Sha256Sum(client_message.message())) {
@@ -116,6 +120,12 @@ Status ReplicaReplicaGrpcServiceImpl::Prepare(ServerContext* context,
     return Status(StatusCode::PERMISSION_DENIED, "Invalid replica number");
   }
 
+  if (preprepare_cmd.i() == state_->primary) {
+    std::cout << "Prepare message from primary." << std::endl;
+    return Status(StatusCode::PERMISSION_DENIED,
+                  "Prepare message from primary");
+  }
+
   if (!VerifyMessage(request->message(), request->signature(),
                      state_->replicas_public_keys[preprepare_cmd.i()].get())) {
     std::cout << "Incorrect signature of the prepare message." << std::endl;
@@ -144,7 +154,10 @@ Status ReplicaReplicaGrpcServiceImpl::Prepare(ServerContext* context,
 
   // ==== Send commit message ====
 
-  if (op.prepare_signatures.size() >= 2 * state_->f) {
+  if (op.prepared(state_->f)) {
+    lock.unlock();
+    op.prepare_signatures_cv->notify_all();
+
     for (const auto& replica_client : state_->replica_clients) {
       if (replica_client == nullptr) continue;
       if (replica_client->ReplicaCommitClient(
@@ -158,11 +171,64 @@ Status ReplicaReplicaGrpcServiceImpl::Prepare(ServerContext* context,
     }
   }
 
+  lock.unlock();
   return Status::OK;
 }
 Status ReplicaReplicaGrpcServiceImpl::Commit(ServerContext* context,
                                              const SignedMessage* request,
                                              Empty* reply) {
+  // ==== Verify the authenticity of prepare message ====
+
+  CommitCmd commit_cmd;
+  commit_cmd.ParseFromString(request->message());
+
+  if (commit_cmd.i() >= state_->replicas_public_keys.size()) {
+    std::cout << "Invalid replica number in the commit message." << std::endl;
+    return Status(StatusCode::PERMISSION_DENIED, "Invalid replica number");
+  }
+
+  if (!VerifyMessage(request->message(), request->signature(),
+                     state_->replicas_public_keys[commit_cmd.i()].get())) {
+    std::cout << "Incorrect signature of the commit message." << std::endl;
+    return Status(StatusCode::PERMISSION_DENIED, "Incorrect signature");
+  }
+
+  if (commit_cmd.v() != state_->view) {
+    std::cout << "Incorrect view number in the commit message." << std::endl;
+    return Status(StatusCode::PERMISSION_DENIED, "Incorrect view number");
+  }
+
+  std::unique_lock<std::mutex> lock(operation_history_lock_);
+  while (commit_cmd.n() < operation_history_.size()) {
+    operation_history_cv_.wait(lock);
+  }
+
+  OperationState& op = operation_history_[commit_cmd.n()];
+
+  if (commit_cmd.d() != op.digest) {
+    std::cout << "Incorrect digest in the prepare message." << std::endl;
+    return Status(StatusCode::PERMISSION_DENIED, "Incorrect digest");
+  }
+
+  while (!op.prepared(state_->f)) {
+    op.prepare_signatures_cv->wait(lock);
+  }
+
+  // ==== Store the signatures ====
+
+  op.commit_signatures[commit_cmd.i()] = *request;
+
+  // ==== Reply to the client ====
+
+  ReplyCmd reply_cmd;
+  reply_cmd.set_v(state_->view);
+  reply_cmd.set_t(op.request.t());
+  reply_cmd.set_c(op.request.c());
+  reply_cmd.set_i(state_->replica_id);
+  // reply_cmd.set_r(???);  // TODO: the result
+  state_->replies.do_fill(reply_cmd);
+
+  lock.unlock();
   return Status::OK;
 }
 Status ReplicaReplicaGrpcServiceImpl::RelayRequest(ServerContext* context,
