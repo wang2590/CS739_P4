@@ -9,8 +9,8 @@
 class LibClient {
  public:
   LibClient(std::vector<std::string> ip_ports,
-            std::vector<RsaPtr>& replicas_public_keys, RsaPtr private_key,
-            RsaPtr public_key);
+            const std::vector<RsaPtr>& replicas_public_keys, RsaPtr private_key,
+            const std::string& public_key);
   void client_read(int offset);
   void client_write(int offset, std::string buf);
 

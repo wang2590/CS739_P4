@@ -45,7 +45,7 @@ int main(int argc, char *argv[]) {
   LibClient client =
       LibClient(replicas_ip_ports, replicas_public_keys,
                 CreateRsaWithFilename(config["private_key_path"], false), ,
-                CreateRsaWithFilename(config["public_key_path"], true));
+                /*TODO: read this file to string*/ config["public_key_path"]);
 
   std::string action = "";
   int offset = -1;
