@@ -13,6 +13,7 @@
 
 using namespace std::chrono_literals;
 using namespace client_replica;
+using namespace std;
 
 LibClient::LibClient(const std::vector<std::string>& ip_ports,
                      const std::vector<std::string>& replicas_public_keys,
@@ -55,9 +56,11 @@ std::string LibClient::readFile(std::string input) {
   }
   return output;
 }
+
 void LibClient::client_read(int offset) {
   using namespace std::literals;
   std::unordered_map<std::string, int> hashTable;  // message -> count
+  std::unordered_set<int> verifyID;
   // set double timestamp
   auto timestamp = std::chrono::high_resolution_clock::now();
   auto timestamp_ns =
@@ -72,24 +75,26 @@ void LibClient::client_read(int offset) {
 
   auto time_out = std::chrono::system_clock::now() + 1000ms;
   // consumer
-  while (hashTable.size() < 2 * this->quarum_num + 1) {
+  while (hashTable.size() < 2 * quarum_num + 1) {
     ReplyCmd result;
     int ret = state_.q->do_get(time_out, result);
     if (ret != 0) {
       cout << "read command timeout error" << endl;
       return;
     }
-
-    // timestamp_d
-    // TODO: Check the message's timestamp
-
-    // Timestamp match >> add to hashTable, else discard
-
-    // if count is over quarum_num, read success
+    if (result.t() == timestamp_d &&
+        verifyID.find(result.i()) == verifyID.end()) {
+      std::string data = result.r().read().data();
+      hashTable[data]++;
+      verifyID.insert(result.i());
+      if (hashTable[data] > quarum_num) {
+        cout << "read success: " << data << endl;
+      }
+    }
   }
+  cout << "read Failed" << endl;
   return;
 }
-
 void LibClient::client_write(int offset, std::string buf) {
   // set double timestamp
   auto timestamp = std::chrono::high_resolution_clock::now();
