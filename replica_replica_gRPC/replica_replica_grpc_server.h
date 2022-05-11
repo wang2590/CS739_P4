@@ -39,6 +39,9 @@ class ReplicaReplicaGrpcServiceImpl final : public ReplicaReplicaGrpc::Service {
  private:
   ReplicaState* state_;
 
+  int PerformOperation(const client_replica::OperationCmd& operation_cmd,
+                       client_replica::ReplyData* result);
+
   struct OperationState {
     client_replica::RequestCmd request;
     std::string digest;

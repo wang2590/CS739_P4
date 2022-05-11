@@ -228,6 +228,11 @@ Status ReplicaReplicaGrpcServiceImpl::Commit(ServerContext* context,
       last_commited_operation_cv_.wait(last_commit_lock);
     }
 
+    ReplyData result;
+    if (PerformOperation(op.request.o(), &result) != 0) {
+      return Status(StatusCode::INTERNAL, "Failed to perform the operation");
+    }
+
     ReplyCmd reply_cmd;
     reply_cmd.set_v(state_->view);
     reply_cmd.set_t(op.request.t());
@@ -254,26 +259,7 @@ Status ReplicaReplicaGrpcServiceImpl::Checkpoint(ServerContext* context,
   return Status::OK;
 }
 
-// // Run this in Primary/backup's main function
-// void RunServer(string serverAddress) {
-//   ReplicaReplicaGrpcServiceImpl service1;
-//   // ClientServergRPCServiceImpl service2;
-//   grpc::EnableDefaultHealthCheckService(true);
-//   grpc::reflection::InitProtoReflectionServerBuilderPlugin();
-//   ServerBuilder builder;
-//   builder.AddListeningPort(serverAddress, grpc::InsecureServerCredentials());
-//   // multiple services can be registered
-//   //
-//   https://github.com/grpc/grpc/blob/master/test/cpp/end2end/hybrid_end2end_test.cc
-//   builder.RegisterService(&service1);
-//   // builder.RegisterService(&service2);
-//   std::unique_ptr<Server> server(builder.BuildAndStart());
-//   std::cout << "Server listening on " << serverAddress << std::endl;
-//   server->Wait();
-// }
-
-// int main(int argc, char** argv) {
-//   string serverAddress("0.0.0.0:50051");
-//   RunServer(serverAddress);
-//   return 0;
-// }
+int ReplicaReplicaGrpcServiceImpl::PerformOperation(
+    const OperationCmd& operation_cmd, ReplyData* result) {
+  return 0;
+}
