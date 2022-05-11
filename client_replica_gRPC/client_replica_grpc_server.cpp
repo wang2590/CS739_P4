@@ -1,6 +1,9 @@
 #include "client_replica_grpc_server.h"
 
 #include <errno.h>
+#include <grpcpp/ext/proto_server_reflection_plugin.h>
+#include <grpcpp/grpcpp.h>
+#include <grpcpp/health_check_service_interface.h>
 #include <signal.h>
 
 #include <iostream>
@@ -8,12 +11,6 @@
 #include <string>
 #include <utility>
 #include <vector>
-
-static const string MOUNTPATH = "/p4_block";
-
-#include <grpcpp/ext/proto_server_reflection_plugin.h>
-#include <grpcpp/grpcpp.h>
-#include <grpcpp/health_check_service_interface.h>
 
 #include "client_replica.grpc.pb.h"
 
@@ -42,9 +39,6 @@ Status ClientReplicaGrpcServiceImpl::Request(ServerContext* context,
 Status ClientReplicaGrpcServiceImpl::Reply(
     ServerContext* context, const ReplyReq* request,
     ServerWriter<SignedMessage>* reply_writer) {
-  int numOfBytes = 0;
-  struct timespec spec;
-
   SignedMessage* reply = new SignedMessage();
   // TODO: set message and signature
   // reply->set_message();

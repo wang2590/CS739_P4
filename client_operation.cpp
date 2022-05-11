@@ -36,13 +36,16 @@ LibClient::LibClient(std::vector<std::string>& ip_ports,
 void LibClient::client_read(int offset) {
   using namespace std::literals;
   std::unordered_map<std::string, int> hashTable;  // message -> count
+  // set double timestamp
   auto timestamp = std::chrono::high_resolution_clock::now();
-
+  auto timestamp_ns =
+      std::chrono::time_point_cast<std::chrono::nanoseconds>(timestamp);
+  double timestamp_d = timestamp_ns.time_since_epoch().count();
 
   RequestCmd cmd;
   cmd.mutable_o()->mutable_read()->set_offset(offset);
-  cmd.set_t(timestamp);
-  cmd.set_c(state_.public_key.get());
+  cmd.set_t(timestamp_d);
+  // cmd.set_c(state_.public_key.get());
   int res = replicas[0]->clientRequest(cmd);
 
   auto time_out = std::chrono::system_clock::now() + 100ms;
@@ -53,22 +56,22 @@ void LibClient::client_read(int offset) {
     if (ret != 0) {
       return;
     }
-    
+
     // TODO: Check the message's timestamp
 
     // Timestamp match >> add to hashTable, else discard
 
     // if count is over quarum_num, read success
   }
-
-  std::cout << "Read Success! Data: " << dumb2 << " size = " << dumb2.size()
-            << std::endl;
-
   return;
 }
 
 void LibClient::client_write(int offset, std::string buf) {
+  // set double timestamp
   auto timestamp = std::chrono::high_resolution_clock::now();
+  auto timestamp_ns =
+      std::chrono::time_point_cast<std::chrono::nanoseconds>(timestamp);
+  double timestamp_d = timestamp_ns.time_since_epoch().count();
   std::string dumb = "";
   std::set<int> s;  // Replica Id
   int counter = 0;
@@ -77,8 +80,8 @@ void LibClient::client_write(int offset, std::string buf) {
 
   cmd.mutable_o()->mutable_write()->set_offset(offset);
   cmd.mutable_o()->mutable_write()->set_data(buf);
-  cmd.set_t(timestamp);
-  cmd.set_c(state_.public_key.get());
+  cmd.set_t(timestamp_d);
+  // cmd.set_c(state_.public_key.get());
   int res = replicas[0]->clientRequest(cmd);
 
   auto time_out = timestamp + 100ms;

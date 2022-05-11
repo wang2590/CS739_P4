@@ -125,7 +125,7 @@ if(BUILD_CLIENT)
     ${_GRPC_GRPCPP}
     ${_PROTOBUF_LIBPROTOBUF})
   ## add executables
-  set(CLIENT ../client.cpp ../client_operation.cpp)
+  set(CLIENT ../client.cpp ../client_operation.cpp ../lib_crypto.cpp)
   add_executable(client ${CLIENT})
   target_link_libraries(client
     client_replica_client
