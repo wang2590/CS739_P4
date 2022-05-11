@@ -1,10 +1,12 @@
 #include <iostream>
 #include "client_operation.h"
 #include "common.h"
+#include <fstream>
 #include <nlohmann/json.hpp>
+using nlohmann::json;
 
 void usage(char *argv[]) {
-  printf("usage: %s -c config_file  [-h]\n", argv[0]);
+  printf("usage: %s -c config_file [-h]\n", argv[0]);
 }
 
 int main(int argc, char *argv[]) {

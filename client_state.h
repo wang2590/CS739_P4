@@ -6,7 +6,7 @@
 template <typename T> class consumer_queue;
 
 struct ClientState {
-  consumer_queue<std::pair<std::string, std::string>>* q;
+  std::unique_ptr<consumer_queue<std::pair<std::string, std::string>>> q;
 };
 
 #endif
