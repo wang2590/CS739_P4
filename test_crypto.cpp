@@ -10,8 +10,11 @@
 
 int main() {
   std::string message = "hello, world";
-  std::string sig = SignMessage(message, "private.pem");
-  std::cout << VerifyMessage(message, sig, "public.pem") << std::endl;
+  RsaPtr priv = CreateRsaWithFilename("private.pem", false);
+  RsaPtr pub = CreateRsaWithFilename("public.pem", true);
+  std::string sig = SignMessage(message, priv.get());
+  std::cout << VerifyMessage(message, sig, pub.get()) << std::endl;
+
   std::string digest = Sha256Sum(message);
   for (char c : digest) {
     std::cout << std::setw(2) << std::setfill('0') << std::hex
