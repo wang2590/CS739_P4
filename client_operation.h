@@ -1,5 +1,6 @@
 #ifndef CLIENT_OPERATION_H
 #define CLIENT_OPERATION_H
+#include <fstream>
 #include <string>
 #include <thread>
 #include <vector>
@@ -8,6 +9,7 @@
 #include "client_state.h"
 #include "consumer_queue.h"
 #include "lib_crypto.h"
+
 
 class LibClient {
  public:
@@ -23,6 +25,7 @@ class LibClient {
   int quarum_num;
   std::vector<std::unique_ptr<ClientReplicaGrpcClient>> replicas;
   void initClientReplyThread();
+  std::string readFile(std::string input);
 };
 
 #endif

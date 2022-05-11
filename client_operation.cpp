@@ -20,7 +20,7 @@ LibClient::LibClient(const std::vector<std::string>& ip_ports,
                      const std::string& public_key_path) {
   state_.q = std::make_unique<consumer_queue<p>>();
   state_.private_key = CreateRsaWithFilename(private_key_path, false);
-  // state_.public_key = CreateRsaWithFilename(public_key_path, true); // TODO
+  state_.public_key = readFile(public_key_path);
   for (auto keys : replicas_public_keys) {
     state_.replicas_public_keys.push_back(CreateRsaWithFilename(keys, true));
   }
@@ -42,6 +42,19 @@ void LibClient ::initClientReplyThread() {
   cout << "Start clientReply threads Call" << endl;
 }
 
+std::string LibClient::readFile(std::string input) {
+  fstream newfile;
+  newfile.open(input, ios::in);
+  string output;
+  if (newfile.is_open()) {
+    string tp;
+    while (getline(newfile, tp)) {
+      output += tp;
+    }
+    newfile.close();  // close the file object.
+  }
+  return output;
+}
 void LibClient::client_read(int offset) {
   using namespace std::literals;
   std::unordered_map<std::string, int> hashTable;  // message -> count
