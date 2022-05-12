@@ -16,7 +16,7 @@ class LibClient {
             const std::vector<std::string>& replicas_public_keys,
             const std::string& private_key_path,
             const std::string& public_key_path);
-  void client_read(int offset);
+  std::string client_read(int offset);
   void client_write(int offset, std::string buf);
 
  private:

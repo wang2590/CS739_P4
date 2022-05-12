@@ -57,7 +57,7 @@ std::string LibClient::readFile(std::string input) {
   return output;
 }
 
-void LibClient::client_read(int offset) {
+std::string LibClient::client_read(int offset) {
   using namespace std::literals;
   std::unordered_map<std::string, int> hashTable;  // message -> count
   std::unordered_set<int> verifyID;
@@ -80,7 +80,7 @@ void LibClient::client_read(int offset) {
     int ret = state_.q->do_get(time_out, result);
     if (ret != 0) {
       cout << "read command timeout error" << endl;
-      return;
+      return "";
     }
     if (result.t() == timestamp_d &&
         verifyID.find(result.i()) == verifyID.end()) {
@@ -89,12 +89,12 @@ void LibClient::client_read(int offset) {
       verifyID.insert(result.i());
       if (hashTable[data] > quarum_num) {
         cout << "read success: " << data << endl;
-        return;
+        return data;
       }
     }
   }
   cout << "read Failed" << endl;
-  return;
+  return "";
 }
 
 void LibClient::client_write(int offset, std::string buf) {
