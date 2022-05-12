@@ -77,6 +77,7 @@ int main(int argc, char *argv[]) {
   // grpc server
   ReplicaReplicaGrpcServiceImpl service1(&state);
   ClientReplicaGrpcServiceImpl service2(&state);
+  state.rr_service = &service1;
   grpc::EnableDefaultHealthCheckService(true);
   grpc::reflection::InitProtoReflectionServerBuilderPlugin();
   ServerBuilder builder;

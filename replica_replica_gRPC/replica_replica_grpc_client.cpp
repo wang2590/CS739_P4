@@ -121,7 +121,44 @@ int ReplicaReplicaGrpcClient::ReplicaRecoverClient(int last_n) {
       stub_->Recover(&context, request));
 
   while (reader->Read(&reply)) {
-    // TODO
+    std::set<int> signed_replicas;
+    for (const SignedMessage& signed_message : request) {
+      CommitCmd commit_cmd;
+      commit_cmd.ParseFromString(signed_message.message());
+
+      std::string res =
+          state_->rr_service->VerifyAndStoreCommit(&signed_message);
+      if (res == "") {
+        signed_replicas.insert(commit_cmd.i());
+      }
+    }
+
+    if (signed_replicas.size() >= 2 * state_.f + 1) {
+      std::lock_guard<std::mutex> lock(state_->operation_history_lock);
+      OperationState& op = state_->operation_history[commit_cmd.n()];
+
+      std::unique_lock<std::mutex> last_commit_lock(
+          state_->last_commited_operation_lock);
+
+      while (state_->last_commited_operation != commit_cmd.n() - 1) {
+        state_->last_commited_operation_cv.wait(last_commit_lock);
+      }
+
+      ReplyCmd reply_cmd;
+      reply_cmd.set_v(state_->view);
+      reply_cmd.set_t(op.request.t());
+      reply_cmd.set_c(op.request.c());
+      reply_cmd.set_i(state_->replica_id);
+
+      if (PerformOperation(op.request.o(), reply_cmd.mutable_r()) != 0) {
+        return Status(StatusCode::INTERNAL, "Failed to perform the operation");
+      }
+
+      state_->replies.do_fill(reply_cmd);
+
+      state_->last_commited_operation = commit_cmd.n();
+      state_->last_commited_operation_cv.notify_all();
+    }
   }
 
   Status status = reader->Finish();

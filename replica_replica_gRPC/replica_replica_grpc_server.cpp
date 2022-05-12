@@ -177,50 +177,16 @@ Status ReplicaReplicaGrpcServiceImpl::Prepare(ServerContext* context,
 Status ReplicaReplicaGrpcServiceImpl::Commit(ServerContext* context,
                                              const SignedMessage* request,
                                              Empty* reply) {
-  // ==== Verify the authenticity of prepare message ====
-
-  CommitCmd commit_cmd;
-  commit_cmd.ParseFromString(request->message());
-
-  if (commit_cmd.i() >= state_->replicas_public_keys.size()) {
-    std::cout << "Invalid replica number in the commit message." << std::endl;
-    return Status(StatusCode::PERMISSION_DENIED, "Invalid replica number");
+  std::string res = VerifyAndStoreCommit(request);
+  if (res != "") {
+    return Status(StatusCode::PERMISSION_DENIED, res);
   }
 
-  if (!VerifyMessage(request->message(), request->signature(),
-                     state_->replicas_public_keys[commit_cmd.i()].get())) {
-    std::cout << "Incorrect signature of the commit message." << std::endl;
-    return Status(StatusCode::PERMISSION_DENIED, "Incorrect signature");
-  }
-
-  if (commit_cmd.v() != state_->view) {
-    std::cout << "Incorrect view number in the commit message." << std::endl;
-    return Status(StatusCode::PERMISSION_DENIED, "Incorrect view number");
-  }
-
-  std::unique_lock<std::mutex> lock(state_->operation_history_lock);
-  while (commit_cmd.n() < state_->operation_history.size()) {
-    state_->operation_history_cv.wait(lock);
-  }
-
-  OperationState& op = state_->operation_history[commit_cmd.n()];
-
-  if (commit_cmd.d() != op.digest) {
-    std::cout << "Incorrect digest in the prepare message." << std::endl;
-    return Status(StatusCode::PERMISSION_DENIED, "Incorrect digest");
-  }
-
-  while (!op.prepared(state_->f)) {
-    op.prepare_signatures_cv->wait(lock);
-  }
-
-  // ==== Store the signatures ====
-
-  op.commit_signatures[commit_cmd.i()] = *request;
-
-  // ==== Reply to the client ====
-
+  // Perform operation & Reply to the client
   {
+    std::lock_guard<std::mutex> lock(state_->operation_history_lock);
+    OperationState& op = state_->operation_history[commit_cmd.n()];
+
     std::unique_lock<std::mutex> last_commit_lock(
         state_->last_commited_operation_lock);
 
@@ -244,7 +210,6 @@ Status ReplicaReplicaGrpcServiceImpl::Commit(ServerContext* context,
     state_->last_commited_operation_cv.notify_all();
   }
 
-  lock.unlock();
   return Status::OK;
 }
 
@@ -272,6 +237,51 @@ Status ReplicaReplicaGrpcServiceImpl::Recover(
     reply_writer->Write(reply);
   }
   return Status::OK;
+}
+
+bool VerifyAndStoreCommit(const SignedMessage* request) {
+  // ==== Verify the authenticity of prepare message ====
+  CommitCmd commit_cmd;
+  commit_cmd.ParseFromString(request->message());
+
+  if (commit_cmd.i() >= state_->replicas_public_keys.size()) {
+    std::cout << "Invalid replica number in the commit message." << std::endl;
+    return "Invalid replica number";
+  }
+
+  if (!VerifyMessage(request->message(), request->signature(),
+                     state_->replicas_public_keys[commit_cmd.i()].get())) {
+    std::cout << "Incorrect signature of the commit message." << std::endl;
+    return "Incorrect signature";
+  }
+
+  if (commit_cmd.v() != state_->view) {
+    std::cout << "Incorrect view number in the commit message." << std::endl;
+    return "Incorrect view number";
+  }
+
+  std::unique_lock<std::mutex> lock(state_->operation_history_lock);
+  while (commit_cmd.n() < state_->operation_history.size()) {
+    state_->operation_history_cv.wait(lock);
+  }
+
+  OperationState& op = state_->operation_history[commit_cmd.n()];
+
+  if (commit_cmd.d() != op.digest) {
+    std::cout << "Incorrect digest in the prepare message." << std::endl;
+    return "Incorrect digest";
+  }
+
+  while (!op.prepared(state_->f)) {
+    op.prepare_signatures_cv->wait(lock);
+  }
+
+  // ==== Store the signatures ====
+
+  op.commit_signatures[commit_cmd.i()] = *request;
+
+  lock.unlock();
+  return "";
 }
 
 int ReplicaReplicaGrpcServiceImpl::PerformOperation(

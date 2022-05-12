@@ -33,6 +33,9 @@ class ReplicaReplicaGrpcServiceImpl final : public ReplicaReplicaGrpc::Service {
       ServerContext* context, const replica_replica::RecoverReq* request,
       ServerWriter<replica_replica::RecoverReply>* reply_writer) override;
 
+  // returns "" on success, returns an error message on failure
+  std::string VerifyAndStoreCommit(const SignedMessage* request);
+
  private:
   ReplicaState* state_;
 

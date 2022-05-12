@@ -44,6 +44,8 @@ struct ReplicaState {
   std::vector<RsaPtr> replicas_public_keys;
   consumer_queue<client_replica::ReplyCmd> replies;
 
+  ReplicaReplicaGrpcServiceImpl* rr_service;
+
   std::vector<OperationState> operation_history;
   std::mutex operation_history_lock;
   std::condition_variable operation_history_cv;
