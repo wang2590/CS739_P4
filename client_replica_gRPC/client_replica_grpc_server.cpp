@@ -73,7 +73,7 @@ Status ClientReplicaGrpcServiceImpl::Reply(
   while (1) {                                                  // infinite loop
     auto time_out = std::chrono::system_clock::now() + 9999s;  // scary ):
     ReplyCmd result;
-    state_->replies.do_get(time_out, result);
+    if (state_->replies.do_get(time_out, result) != 0) continue;
     SignedMessage* reply = new SignedMessage();
     if (SignMessage(result, state_->private_key.get(), reply) < 0)
       return Status(StatusCode::PERMISSION_DENIED, "Wrong request type!");

@@ -65,7 +65,7 @@ Status ReplicaReplicaGrpcServiceImpl::PrePrepare(ServerContext* context,
       }
     }
 
-    if (preprepare_cmd.d() == Sha256Sum(client_message.message())) {
+    if (preprepare_cmd.d() != Sha256Sum(client_message.message())) {
       goto faulty_primary;
     }
 
@@ -138,9 +138,9 @@ Status ReplicaReplicaGrpcServiceImpl::Prepare(ServerContext* context,
   }
 
   std::unique_lock<std::mutex> lock(state_->operation_history_lock);
-  while (preprepare_cmd.n() < state_->operation_history.size()) {
-    state_->operation_history_cv.wait(lock);
-  }
+  state_->operation_history_cv.wait(lock, [&]() {
+    return preprepare_cmd.n() < state_->operation_history.size();
+  });
 
   OperationState& op = state_->operation_history[preprepare_cmd.n()];
   if (preprepare_cmd.d() != op.digest) {
@@ -171,7 +171,6 @@ Status ReplicaReplicaGrpcServiceImpl::Prepare(ServerContext* context,
     }
   }
 
-  lock.unlock();
   return Status::OK;
 }
 Status ReplicaReplicaGrpcServiceImpl::Commit(ServerContext* context,
@@ -199,9 +198,9 @@ Status ReplicaReplicaGrpcServiceImpl::Commit(ServerContext* context,
   }
 
   std::unique_lock<std::mutex> lock(state_->operation_history_lock);
-  while (commit_cmd.n() < state_->operation_history.size()) {
-    state_->operation_history_cv.wait(lock);
-  }
+  state_->operation_history_cv.wait(lock, [&]() {
+    return commit_cmd.n() < state_->operation_history.size();
+  });
 
   OperationState& op = state_->operation_history[commit_cmd.n()];
 
@@ -210,9 +209,8 @@ Status ReplicaReplicaGrpcServiceImpl::Commit(ServerContext* context,
     return Status(StatusCode::PERMISSION_DENIED, "Incorrect digest");
   }
 
-  while (!op.prepared(state_->f)) {
-    op.prepare_signatures_cv->wait(lock);
-  }
+  op.prepare_signatures_cv->wait(lock,
+                                 [&]() { return op.prepared(state_->f); });
 
   // ==== Store the signatures ====
 
@@ -224,9 +222,9 @@ Status ReplicaReplicaGrpcServiceImpl::Commit(ServerContext* context,
     std::unique_lock<std::mutex> last_commit_lock(
         state_->last_commited_operation_lock);
 
-    while (state_->last_commited_operation != commit_cmd.n() - 1) {
-      state_->last_commited_operation_cv.wait(last_commit_lock);
-    }
+    state_->last_commited_operation_cv.wait(last_commit_lock, [&]() {
+      return state_->last_commited_operation == commit_cmd.n() - 1;
+    });
 
     ReplyCmd reply_cmd;
     reply_cmd.set_v(state_->view);

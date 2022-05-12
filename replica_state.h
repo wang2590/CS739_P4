@@ -30,7 +30,7 @@ struct OperationState {
   bool prepared(int f) {
     // 2*f+1 nodes agree on it, but the primary and itself do not send prepare
     // message. So, we only need 2*f-1 prepare messages.
-    return prepare_signatures.size() >= 2 * f - 1;
+    return (int)prepare_signatures.size() >= 2 * f - 1;
   }
 };
 struct ReplicaState {
