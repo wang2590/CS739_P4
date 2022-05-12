@@ -67,18 +67,18 @@ void write_latency_test() {
     auto duration = 0;
     while (file.good()) {
       file >> str;
-
-      for (int i = 0; i < 10; ++i) {
-        auto start_time = std::chrono::high_resolution_clock::now();
-        client->client_write(offset, str);
-        auto end_time = std::chrono::high_resolution_clock::now();
-
-        duration = std::chrono::duration_cast<std::chrono::microseconds>(
-                      end_time - start_time)
-                      .count();
-        outfile << duration << "\n"; 
-      }
+      auto start_time = std::chrono::high_resolution_clock::now();
+      for (int i = 0; i < 100; ++i) {
         
+        client->client_write(offset, str);
+        
+      }
+      auto end_time = std::chrono::high_resolution_clock::now();
+
+      duration = std::chrono::duration_cast<std::chrono::microseconds>(
+                    end_time - start_time)
+                    .count();
+      outfil e << duration / 100 << "\n"; 
       offset += str.size();
     }
     
