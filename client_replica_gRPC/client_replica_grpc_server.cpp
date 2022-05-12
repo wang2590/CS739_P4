@@ -31,26 +31,29 @@ ClientReplicaGrpcServiceImpl::ClientReplicaGrpcServiceImpl(ReplicaState* state)
 Status ClientReplicaGrpcServiceImpl::Request(ServerContext* context,
                                              const SignedMessage* request,
                                              Empty* reply) {
-  RequestCmd client_cmd;
-  if (client_cmd.ParseFromString(request->message())) {
-    RsaPtr rsa = CreateRsa(client_cmd.c(), true);
-    if (VerifyMessage(request->message(), request->signature(), rsa.get())) {
-      std::string digest = Sha256Sum(request->message());
-      int sequence_n = 0;
-      {
-        const std::lock_guard<std::mutex> lock(state_->operation_history_lock);
-        sequence_n = state_->operation_history.size();
-        state_->operation_history.emplace_back(client_cmd, digest);
-      }
-      for (auto& i : state_->replica_clients) {
-        i->ReplicaPrePrepareClient(state_->view, sequence_n, *request, digest);
-      }
-    } else {
-      return Status(StatusCode::PERMISSION_DENIED, "Wrong request type!");
-    }
-    // reply Empty -> nothing
-    return Status::OK;
+  RequestCmd request_cmd;
+  if (!request_cmd.ParseFromString(request->message())) {
+    return Status(StatusCode::PERMISSION_DENIED, "Failed to parse RequestCmd");
   }
+
+  RsaPtr rsa = CreateRsa(request_cmd.c(), true);
+  if (!VerifyMessage(request->message(), request->signature(), rsa.get())) {
+    return Status(StatusCode::PERMISSION_DENIED, "Wrong request type!");
+  }
+
+  std::string digest = Sha256Sum(request->message());
+  int sequence_n = 0;
+  {
+    const std::lock_guard<std::mutex> lock(state_->operation_history_lock);
+    sequence_n = state_->operation_history.size();
+    state_->operation_history.emplace_back(request_cmd, digest);
+  }
+  for (auto& i : state_->replica_clients) {
+    i->ReplicaPrePrepareClient(state_->view, sequence_n, *request, digest);
+  }
+
+  // reply Empty -> nothing
+  return Status::OK;
 }
 Status ClientReplicaGrpcServiceImpl::Reply(
     ServerContext* context, const ReplyReq* request,
