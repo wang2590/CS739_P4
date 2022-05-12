@@ -1,0 +1,19 @@
+{
+    "ip_port": "127.0.0.1:1234",
+    "private_key_path": "keys/client.priv",
+    "public_key_path": "keys/client.pub",
+    "replicas": [
+        {
+            "ip_port": "127.0.0.1:1234",
+            "public_key_path": "keys/replica_0.pub"
+        },
+        {
+            "ip_port": "127.0.0.1:1235",
+            "public_key_path": "keys/replica_1.pub"
+        },
+        {
+            "ip_port": "127.0.0.1:1234",
+            "public_key_path": "keys/replica_2.pub"
+        }
+    ]
+}
