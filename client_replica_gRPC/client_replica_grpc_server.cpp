@@ -57,9 +57,9 @@ Status ClientReplicaGrpcServiceImpl::Reply(
     ServerWriter<SignedMessage>* reply_writer) {
   // unsure about the client id where it goes
   const string client_id = request->client_id();
-  auto time_out = std::chrono::system_clock::now() + 9999s;  // scary ):
   // ReplyCmd Comsumer
-  while (1) {  // infinite loop
+  while (1) {                                                  // infinite loop
+    auto time_out = std::chrono::system_clock::now() + 9999s;  // scary ):
     ReplyCmd result;
     state_->replies.do_get(time_out, result);
     SignedMessage* reply = new SignedMessage();
