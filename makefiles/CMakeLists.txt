@@ -101,17 +101,17 @@ target_link_libraries(rr_grpc_proto
   ${_GRPC_GRPCPP}
   ${_PROTOBUF_LIBPROTOBUF})
 
-# ## Executable targets 
-# ## test build
-# if(BUILD_TEST)
-#   add_executable(test ../measurement.cpp ../client_operation.cpp ../client_operation.h) 
-#   target_link_libraries(test
-#     client_replica_client
-#     cr_grpc_proto
-#     ${_REFLECTION}
-#     ${_GRPC_GRPCPP}
-#     ${_PROTOBUF_LIBPROTOBUF})
-# endif(BUILD_TEST)
+## Executable targets 
+## test build
+if(BUILD_TEST)
+  add_executable(test ../measurement.cpp ../client_operation.cpp ../lib_crypto.cpp) 
+  target_link_libraries(test
+    client_replica_client
+    cr_grpc_proto
+    ${_REFLECTION}
+    ${_GRPC_GRPCPP}
+    ${_PROTOBUF_LIBPROTOBUF})
+endif(BUILD_TEST)
 
 ## client build
 if(BUILD_CLIENT)
