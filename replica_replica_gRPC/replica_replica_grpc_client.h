@@ -22,7 +22,6 @@ class ReplicaReplicaGrpcClient {
   int ReplicaPrepareClient(int32_t v, int64_t n, const string& d, int32_t i);
   int ReplicaCommitClient(int32_t v, int64_t n, const string& d, int32_t i);
   int ReplicaRelayRequestClient(const common::SignedMessage& request);
-  int ReplicaRecoverClient(int last_n);
 
  private:
   template <class T>
