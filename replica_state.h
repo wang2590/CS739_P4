@@ -27,10 +27,10 @@ struct OperationState {
         digest(d),
         prepare_signatures_cv(std::make_unique<std::condition_variable>()) {}
 
-  bool prepared(int f) {
+  bool prepared(int f, bool is_primary) {
     // 2*f+1 nodes agree on it, but the primary and itself do not send prepare
     // message. So, we only need 2*f-1 prepare messages.
-    return (int)prepare_signatures.size() >= 2 * f - 1;
+    return (int)prepare_signatures.size() >= 2 * f + (is_primary ? 0 : -1);
   }
 };
 struct ReplicaState {
