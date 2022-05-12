@@ -31,25 +31,34 @@ ClientReplicaGrpcServiceImpl::ClientReplicaGrpcServiceImpl(ReplicaState* state)
 Status ClientReplicaGrpcServiceImpl::Request(ServerContext* context,
                                              const SignedMessage* request,
                                              Empty* reply) {
-  RequestCmd request_cmd;
-  if (!request_cmd.ParseFromString(request->message())) {
-    return Status(StatusCode::PERMISSION_DENIED, "Failed to parse RequestCmd");
-  }
+  if (state_->replica_id == state_->primary) {
+    RequestCmd request_cmd;
+    if (!request_cmd.ParseFromString(request->message())) {
+      return Status(StatusCode::PERMISSION_DENIED,
+                    "Failed to parse RequestCmd");
+    }
 
-  RsaPtr rsa = CreateRsa(request_cmd.c(), true);
-  if (!VerifyMessage(request->message(), request->signature(), rsa.get())) {
-    return Status(StatusCode::PERMISSION_DENIED, "Wrong request type!");
-  }
+    RsaPtr rsa = CreateRsa(request_cmd.c(), true);
+    if (!VerifyMessage(request->message(), request->signature(), rsa.get())) {
+      return Status(StatusCode::PERMISSION_DENIED, "Wrong request type!");
+    }
 
-  std::string digest = Sha256Sum(request->message());
-  int sequence_n = 0;
-  {
-    const std::lock_guard<std::mutex> lock(state_->operation_history_lock);
-    sequence_n = state_->operation_history.size();
-    state_->operation_history.emplace_back(request_cmd, digest);
-  }
-  for (auto& i : state_->replica_clients) {
-    i->ReplicaPrePrepareClient(state_->view, sequence_n, *request, digest);
+    std::string digest = Sha256Sum(request->message());
+    int sequence_n = 0;
+    {
+      const std::lock_guard<std::mutex> lock(state_->operation_history_lock);
+      sequence_n = state_->operation_history.size();
+      state_->operation_history.emplace_back(request_cmd, digest);
+    }
+    for (auto& client : state_->replica_clients) {
+      if (client == nullptr) continue;
+      client->ReplicaPrePrepareClient(state_->view, sequence_n, *request,
+                                      digest);
+    }
+  } else {
+    // TODO: relay the request
+    return Status(StatusCode::UNIMPLEMENTED,
+                  "Only primary accepts the request.");
   }
 
   // reply Empty -> nothing
