@@ -1,23 +1,23 @@
 #ifndef CONSUMER_QUEUE_H
 #define CONSUMER_QUEUE_H
+#include <condition_variable>
 #include <mutex>
 #include <queue>
 #include <thread>
-#include <condition_variable>
 using Clock = std::chrono::system_clock;
 using Duration = std::chrono::duration<long int, std::ratio<1, 1000000000>>;
 using TimePoint = std::chrono::time_point<Clock, Duration>;
 
-
 template <typename T>
-class consumer_queue {
+class ConsumerQueue {
  public:
-  consumer_queue() = default;
+  ConsumerQueue() = default;
 
   int do_fill(T data) {
     std::unique_lock<std::mutex> ul(lock);
     this->buffer.push(data);
     ul.unlock();
+    cv.notify_one();
     return 0;
   };
 

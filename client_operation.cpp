@@ -19,7 +19,7 @@ LibClient::LibClient(const std::vector<std::string>& ip_ports,
                      const std::vector<std::string>& replicas_public_keys,
                      const std::string& private_key_path,
                      const std::string& public_key_path) {
-  state_.q = std::make_unique<consumer_queue<ReplyCmd>>();
+  state_.q = std::make_unique<ConsumerQueue<ReplyCmd>>();
   state_.private_key = CreateRsaWithFilename(private_key_path, false);
   state_.public_key = readFile(public_key_path);
   for (auto keys : replicas_public_keys) {

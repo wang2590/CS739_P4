@@ -42,7 +42,7 @@ struct ReplicaState {
   std::vector<std::unique_ptr<ReplicaReplicaGrpcClient>> replica_clients;
   RsaPtr private_key = RsaPtr(nullptr, RSA_free);
   std::vector<RsaPtr> replicas_public_keys;
-  consumer_queue<client_replica::ReplyCmd> replies;
+  ConsumerQueue<client_replica::ReplyCmd> replies;
 
   std::vector<OperationState> operation_history;
   std::mutex operation_history_lock;

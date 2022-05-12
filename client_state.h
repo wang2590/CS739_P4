@@ -7,10 +7,10 @@
 #include "lib_crypto.h"
 
 template <typename T>
-class consumer_queue;
+class ConsumerQueue;
 
 struct ClientState {
-  std::unique_ptr<consumer_queue<client_replica::ReplyCmd>> q;
+  std::unique_ptr<ConsumerQueue<client_replica::ReplyCmd>> q;
   std::string public_key;
   std::vector<RsaPtr> replicas_public_keys;
   RsaPtr private_key = RsaPtr(nullptr, RSA_free);
