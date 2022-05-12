@@ -10,7 +10,6 @@
 #include "consumer_queue.h"
 #include "lib_crypto.h"
 
-
 class LibClient {
  public:
   LibClient(const std::vector<std::string>& ip_ports,
@@ -26,6 +25,7 @@ class LibClient {
   std::vector<std::unique_ptr<ClientReplicaGrpcClient>> replicas;
   void initClientReplyThread();
   std::string readFile(std::string input);
+  std::vector<std::thread> client_reply_threads_;
 };
 
 #endif

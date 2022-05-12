@@ -36,9 +36,9 @@ LibClient::LibClient(const std::vector<std::string>& ip_ports,
   // create thread to call clientReply from each replicas
   initClientReplyThread();
 }
-void LibClient ::initClientReplyThread() {
+void LibClient::initClientReplyThread() {
   for (auto& i : replicas) {
-    std::thread t = i->thread_func();
+    client_reply_threads_.emplace_back(i->thread_func());
   }
   cout << "Start clientReply threads Call" << endl;
 }
