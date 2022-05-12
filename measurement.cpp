@@ -9,6 +9,7 @@
 #include <nlohmann/json.hpp>
 #include "client_operation.h"
 #include "common.h"
+using nlohmann::json;
 
 #define MB 1024 * 1024
 #define KB 1024
@@ -17,7 +18,7 @@ const std::string perf_data = "./perf_data";
 const std::string perf_stat = "./perf_stat";
 namespace fs = std::filesystem;
 
-LibClient client;
+std::unique_ptr<LibClient> client;
 
 vector<int> file_sizes = {1, 8, 16, 32, 64, 128, 256, 512, 1024};
 
@@ -36,8 +37,8 @@ void write_correctness_test(std::ostream &output) {
   for (int i = 0; i < tests.size(); ++i) {
     tests[i].resize(kBlockSize);
     int offset = (i + 1) * kBlockSize;
-    client_write(offset, tests[i]);
-    std::string result = client_read(offset);
+    client->client_write(offset, tests[i]);
+    std::string result = client->client_read(offset);
     if (result.compare(tests[i])) {
       output << "Primary not correct\n";
       output << i << ": " << tests[i] << "   " << result << "\n";
@@ -69,7 +70,7 @@ void write_latency_test() {
 
       for (int i = 0; i < 10; ++i) {
         auto start_time = std::chrono::high_resolution_clock::now();
-        client_write(offset, str);
+        client->client_write(offset, str);
         auto end_time = std::chrono::high_resolution_clock::now();
 
         duration = std::chrono::duration_cast<std::chrono::microseconds>(
@@ -96,7 +97,7 @@ void read_latency_test(bool unaligned = false) {
   auto duration = 0;
   for (long int i = MB + unaligned; i <= 1024 * MB; i *= 2) {
     auto start_time = std::chrono::high_resolution_clock::now();
-    client_read(i);
+    client->client_read(i);
     auto end_time = std::chrono::high_resolution_clock::now();
     outfile << std::chrono::duration_cast<std::chrono::microseconds>(end_time -
                                                                      start_time)
@@ -176,7 +177,7 @@ int main(int argc, char *argv[]) {
     replicas_public_keys.push_back(replica_conf["public_key_path"]);
   }
   client =
-      LibClient(replicas_ip_ports, replicas_public_keys,
+      std::make_unique<LibClient>(replicas_ip_ports, replicas_public_keys,
                 config["private_key_path"], config["public_key_path"]);
   testing_init();
 
