@@ -14,7 +14,7 @@ Replica: `./replica -c <replica config file path>`
 
 client: `./client -c <client config file path>`
 
-measuement: `./test -c <client config file path>
+measuement: `./test -c <client config file path>`
 
 ### Code Scripts Layout:
 
