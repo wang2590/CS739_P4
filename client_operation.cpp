@@ -50,7 +50,7 @@ std::string LibClient::readFile(std::string input) {
   if (newfile.is_open()) {
     string tp;
     while (getline(newfile, tp)) {
-      output += tp;
+      output += tp + '\n';
     }
     newfile.close();  // close the file object.
   }
