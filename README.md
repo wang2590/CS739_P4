@@ -19,7 +19,7 @@ measuement: `./test -c <client config file path>
 ### Code Scripts Layout:
 
 Three sets of gRPC message & service definition: 
-`./proto` `./cleint_replica_gRPC` `./replica_replica_gRPC
+`./proto` `./cleint_replica_gRPC` `./replica_replica_gRPC`
 
 CMake files: ./makefiles
 
