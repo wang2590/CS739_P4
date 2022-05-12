@@ -76,7 +76,8 @@ RsaPtr CreateRsaWithFilename(const std::string &filename, bool public_key) {
   return RsaPtr(rsa, RSA_free);
 }
 
-std::string SignMessage(const std::string &message, RSA *rsa) {
+std::string SignMessage(std::string message, RSA *rsa) {
+  message = Sha256Sum(message);
   assert(message.size() <= 2048 / 8);
   std::string result(4098, '\0');
   int len = private_encrypt(
@@ -86,8 +87,9 @@ std::string SignMessage(const std::string &message, RSA *rsa) {
   return result;
 }
 
-bool VerifyMessage(const std::string &message, const std::string &signature,
+bool VerifyMessage(std::string message, const std::string &signature,
                    RSA *rsa) {
+  message = Sha256Sum(message);
   std::string result(4098, '\0');
   int len = public_decrypt(
       reinterpret_cast<const unsigned char *>(signature.c_str()),
