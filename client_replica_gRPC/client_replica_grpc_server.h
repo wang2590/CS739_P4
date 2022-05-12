@@ -31,6 +31,8 @@ class ClientReplicaGrpcServiceImpl final : public ClientReplicaGrpc::Service {
                ServerWriter<SignedMessage>* reply_writer) override;
 
  private:
+  SignedMessage CreateFakeRequest(client_replica::RequestCmd request_cmd);
+
   ReplicaState* state_;
 };
 
