@@ -22,6 +22,8 @@ using grpc::ServerContext;
 using grpc::Status;
 
 using namespace std;
+using namespace client_replica;
+using grpc::StatusCode;
 
 ClientReplicaGrpcServiceImpl::ClientReplicaGrpcServiceImpl(ReplicaState* state)
     : state_(state) {}
@@ -29,24 +31,40 @@ ClientReplicaGrpcServiceImpl::ClientReplicaGrpcServiceImpl(ReplicaState* state)
 Status ClientReplicaGrpcServiceImpl::Request(ServerContext* context,
                                              const SignedMessage* request,
                                              Empty* reply) {
-  const string msg = request->message();
-  const string sig = request->signature();
-  // TODO: replica consume client message and signature
-  // reply Empty -> nothing
-  return Status::OK;
+  RequestCmd client_cmd;
+  if (client_cmd.ParseFromString(request->message())) {
+    RsaPtr rsa = CreateRsa(client_cmd.c(), true);
+    if (VerifyMessage(request->message(), request->signature(), rsa.get())) {
+      std::string digest = Sha256Sum(request->message());
+      int sequence_n = 0;
+      {
+        const std::lock_guard<std::mutex> lock(state_->operation_history_lock);
+        sequence_n = state_->operation_history.size();
+        state_->operation_history.emplace_back(client_cmd, digest);
+      }
+      for (auto& i : state_->replica_clients) {
+        i->ReplicaPrePrepareClient(state_->view, sequence_n, *request, digest);
+      }
+    } else {
+      return Status(StatusCode::PERMISSION_DENIED, "Wrong request type!");
+    }
+    // reply Empty -> nothing
+    return Status::OK;
+  }
 }
-
 Status ClientReplicaGrpcServiceImpl::Reply(
     ServerContext* context, const ReplyReq* request,
     ServerWriter<SignedMessage>* reply_writer) {
-  SignedMessage* reply = new SignedMessage();
+  // unsure about the client id where it goes
   const string client_id = request->client_id();
-  // TODO: set message and signature
-  // reply->set_message();
-  // reply->set_signature();
-
-  // TODO: add comsumer
-  while (1) {
+  // ReplyCmd Comsumer
+  while (1) {                                                  // infinite loop
+    auto time_out = std::chrono::system_clock::now() + 9999s;  // scary ):
+    ReplyCmd result;
+    state_->replies.do_get(time_out, result);
+    SignedMessage* reply = new SignedMessage();
+    if (SignMessage(result, state_->private_key.get(), reply) < 0)
+      return Status(StatusCode::PERMISSION_DENIED, "Wrong request type!");
     reply_writer->Write(*reply);
   }
   return Status::OK;
