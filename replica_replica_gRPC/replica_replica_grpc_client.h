@@ -17,12 +17,12 @@ class ReplicaReplicaGrpcClient {
  public:
   ReplicaReplicaGrpcClient(std::shared_ptr<Channel> channel,
                            ReplicaState* state);
-  int ReplicaPrePrepareClient(int32_t v, int64_t n, const string& m);
+  int ReplicaPrePrepareClient(int32_t v, int64_t n, const SignedMessage& m,
+                              std::string d);
   int ReplicaPrepareClient(int32_t v, int64_t n, const string& d, int32_t i);
   int ReplicaCommitClient(int32_t v, int64_t n, const string& d, int32_t i);
   int ReplicaRelayRequestClient(const common::SignedMessage& request);
-  // TODO: checkoint might remove for storing all logs
-  int ReplicaCheckpointClient(const string& msg, const string& sig);
+  int ReplicaRecoverClient(int last_n);
 
  private:
   template <class T>

@@ -5,8 +5,10 @@
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/health_check_service_interface.h>
 
+#include "../lib_crypto.h"
 #include "../replica_state.h"
 #include "client_replica.grpc.pb.h"
+#include "replica_replica_grpc_client.h"
 
 using namespace std;
 

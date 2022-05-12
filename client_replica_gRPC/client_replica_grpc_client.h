@@ -7,6 +7,7 @@
 
 #include "../client_state.h"
 #include "../consumer_queue.h"
+#include "../lib_crypto.h"
 #include "client_replica.grpc.pb.h"
 
 using namespace std;
@@ -26,7 +27,8 @@ class ClientReplicaGrpcClient {
   int replicaID;
 
  public:
-  ClientReplicaGrpcClient(std::shared_ptr<Channel> channel, ClientState* state, int id);
+  ClientReplicaGrpcClient(std::shared_ptr<Channel> channel, ClientState* state,
+                          int id);
   int clientRequest(const client_replica::RequestCmd& cmd);
   void clientReply();
   std::thread thread_func();

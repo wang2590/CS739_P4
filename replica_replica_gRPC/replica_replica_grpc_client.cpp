@@ -19,6 +19,7 @@ using grpc::Channel;
 using grpc::ClientContext;
 // using grpc::ClientReader;
 // using grpc::ClientWriter;
+using grpc::ClientReader;
 using grpc::Status;
 
 using namespace common;
@@ -29,17 +30,16 @@ ReplicaReplicaGrpcClient::ReplicaReplicaGrpcClient(
     : stub_(ReplicaReplicaGrpc::NewStub(channel)), state_(state) {}
 
 int ReplicaReplicaGrpcClient::ReplicaPrePrepareClient(int32_t v, int64_t n,
-                                                      const string& m) {
+                                                      const SignedMessage& m,
+                                                      std::string d) {
   PrePrepareCmd cmd;
   cmd.set_v(v);
   cmd.set_n(n);
-  cmd.set_d(Sha256Sum(m));
+  cmd.set_d(d);
 
   PrePrepareReq request;
   if (ReplicaSignMessage(cmd, request.mutable_preprepare()) < 0) return -1;
-  request.mutable_client_message()->set_message(m);
-  request.mutable_client_message()->set_signature(
-      SignMessage(m, state_->private_key.get()));
+  request.mutable_client_message()->CopyFrom(m);
 
   Empty reply;
   ClientContext context;
@@ -105,14 +105,23 @@ int ReplicaReplicaGrpcClient::ReplicaRelayRequestClient(
     return status.error_code();
 }
 
-// TODO: checkoint might remove for storing all logs
-int ReplicaReplicaGrpcClient::ReplicaCheckpointClient(const string& msg,
-                                                      const string& sig) {
-  return 0;
-}
-
 template <class T>
 int ReplicaReplicaGrpcClient::ReplicaSignMessage(const T& proto_cmd,
                                                  SignedMessage* result) {
   return SignMessage(proto_cmd, state_->private_key.get(), result);
+}
+
+int ReplicaReplicaGrpcClient::ReplicaRecoverClient(int last_n) {
+  RecoverReq request;
+  request.set_last_n(last_n);
+  RecoverReply reply;
+  ClientContext context;
+  std::unique_ptr<ClientReader<RecoverReply>> reader(
+      stub_->Recover(&context, request));
+
+  while (reader->Read(&reply)) {
+    // TODO
+  }
+
+  Status status = reader->Finish();
 }
