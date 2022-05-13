@@ -38,5 +38,6 @@ Testing Code: measurement.cpp
 - read/write latency: measurement.cpp
 - recovery time: measurement.cpp
 - aligned-address vs. unaligned-address: measurement.cpp
+
 2 Fault Tolerance
 -  malicious primary implementation: faults branch
