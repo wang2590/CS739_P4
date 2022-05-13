@@ -41,14 +41,14 @@ int ReplicaReplicaGrpcClient::ReplicaPrePrepareClient(int32_t v, int64_t n,
   if (ReplicaSignMessage(cmd, request.mutable_preprepare()) < 0) return -1;
   request.mutable_client_message()->CopyFrom(m);
 
-  Empty reply;
-  ClientContext context;
-  Status status = stub_->PrePrepare(&context, request, &reply);
+  std::thread t([=]() {
+    Empty reply;
+    ClientContext context;
+    Status status = stub_->PrePrepare(&context, request, &reply);
+  });
+  t.detach();
 
-  if (status.ok())
-    return 0;
-  else
-    return status.error_code();
+  return 0;
 }
 
 int ReplicaReplicaGrpcClient::ReplicaPrepareClient(int32_t v, int64_t n,
@@ -62,14 +62,14 @@ int ReplicaReplicaGrpcClient::ReplicaPrepareClient(int32_t v, int64_t n,
   SignedMessage request;
   if (ReplicaSignMessage(cmd, &request) < 0) return -1;
 
-  Empty reply;
-  ClientContext context;
-  Status status = stub_->Prepare(&context, request, &reply);
+  std::thread t([=]() {
+    Empty reply;
+    ClientContext context;
+    Status status = stub_->Prepare(&context, request, &reply);
+  });
+  t.detach();
 
-  if (status.ok())
-    return 0;
-  else
-    return status.error_code();
+  return 0;
 }
 
 int ReplicaReplicaGrpcClient::ReplicaCommitClient(int32_t v, int64_t n,
@@ -83,26 +83,26 @@ int ReplicaReplicaGrpcClient::ReplicaCommitClient(int32_t v, int64_t n,
   SignedMessage request;
   if (ReplicaSignMessage(cmd, &request) < 0) return -1;
 
-  Empty reply;
-  ClientContext context;
-  Status status = stub_->Commit(&context, request, &reply);
+  std::thread t([=]() {
+    Empty reply;
+    ClientContext context;
+    Status status = stub_->Commit(&context, request, &reply);
+  });
+  t.detach();
 
-  if (status.ok())
-    return 0;
-  else
-    return status.error_code();
+  return 0;
 }
 
 int ReplicaReplicaGrpcClient::ReplicaRelayRequestClient(
     const SignedMessage& request) {
-  Empty reply;
-  ClientContext context;
-  Status status = stub_->RelayRequest(&context, request, &reply);
+  std::thread t([=]() {
+    Empty reply;
+    ClientContext context;
+    Status status = stub_->RelayRequest(&context, request, &reply);
+  });
+  t.detach();
 
-  if (status.ok())
-    return 0;
-  else
-    return status.error_code();
+  return 0;
 }
 
 template <class T>
