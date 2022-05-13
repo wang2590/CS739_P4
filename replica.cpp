@@ -54,7 +54,7 @@ int main(int argc, char *argv[]) {
   }
 
   // open mount file
-  state.mount_file_fd = get_mount_file();
+  state.mount_file_fd = get_mount_file(config["mount_path"]);
 
   // grpc client
   for (auto &replica_conf : config["replicas"]) {

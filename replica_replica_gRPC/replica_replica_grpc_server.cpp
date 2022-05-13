@@ -31,6 +31,8 @@ ReplicaReplicaGrpcServiceImpl::ReplicaReplicaGrpcServiceImpl(
 Status ReplicaReplicaGrpcServiceImpl::PrePrepare(ServerContext* context,
                                                  const PrePrepareReq* request,
                                                  Empty* reply) {
+  std::cout << " === PrePrepare === " << std::endl;
+
   if (state_->replica_id == state_->primary) {
     std::cout
         << "The primary should not receive a pre-prepare message. Ignore it."
@@ -110,6 +112,8 @@ Status ReplicaReplicaGrpcServiceImpl::PrePrepare(ServerContext* context,
 Status ReplicaReplicaGrpcServiceImpl::Prepare(ServerContext* context,
                                               const SignedMessage* request,
                                               Empty* reply) {
+  std::cout << " === Prepare === " << std::endl;
+
   // ==== Verify the authenticity of prepare message ====
 
   PrepareCmd preprepare_cmd;
@@ -154,7 +158,7 @@ Status ReplicaReplicaGrpcServiceImpl::Prepare(ServerContext* context,
 
   // ==== Send commit message ====
 
-  if (op.prepared(state_->f)) {
+  if (op.prepared(state_->f, state_->replica_id == state_->primary)) {
     lock.unlock();
     op.prepare_signatures_cv->notify_all();
 
@@ -176,6 +180,8 @@ Status ReplicaReplicaGrpcServiceImpl::Prepare(ServerContext* context,
 Status ReplicaReplicaGrpcServiceImpl::Commit(ServerContext* context,
                                              const SignedMessage* request,
                                              Empty* reply) {
+  std::cout << " === Commit === " << std::endl;
+
   // ==== Verify the authenticity of prepare message ====
 
   CommitCmd commit_cmd;
@@ -209,8 +215,9 @@ Status ReplicaReplicaGrpcServiceImpl::Commit(ServerContext* context,
     return Status(StatusCode::PERMISSION_DENIED, "Incorrect digest");
   }
 
-  op.prepare_signatures_cv->wait(lock,
-                                 [&]() { return op.prepared(state_->f); });
+  op.prepare_signatures_cv->wait(lock, [&]() {
+    return op.prepared(state_->f, state_->replica_id == state_->primary);
+  });
 
   // ==== Store the signatures ====
 

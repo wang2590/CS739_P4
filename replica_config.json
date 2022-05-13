@@ -2,6 +2,7 @@
     "replica_id": 0,
     "ip_port": "127.0.0.1:1234",
     "private_key_path": "keys/replica_0.priv",
+    "mount_path": "p4_block",
     "replicas": [
         {
             "ip_port": "127.0.0.1:1234",
